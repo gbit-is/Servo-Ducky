@@ -14,4 +14,7 @@
 
 
 
+# Assemble the frame
+
+<img src="https://raw.githubusercontent.com/gbit-is/Servo-Ducky/refs/heads/main/images/assembly.gif" alt="diagram" width="90%"/>
 
