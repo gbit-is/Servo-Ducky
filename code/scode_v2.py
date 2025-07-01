@@ -3,7 +3,7 @@ import busio
 import time
 import os
 
-import scode
+from servo_ducky import servoducky
 import asyncio
 from adafruit_pca9685 import PCA9685
 
@@ -23,6 +23,6 @@ pca.frequency = PCA_FREQ
 pca.channels[0].duty_cycle = PCA_DUTY_CYCLE
 
 
-s = scode.scode(pca=pca)
+s = servoducky(pca=pca)
 
 x = s.servos["1"]["servo"].angle = 0
