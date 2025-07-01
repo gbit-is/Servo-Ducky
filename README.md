@@ -26,7 +26,7 @@ Legend:
     \<Must Be specified\>   
     [can be specified]
 
-M\<Servo Number\> \<Degree to move to\> [Time to move there]  
+S\<Servo Number\> \<Degree to move to\> [Time to move there]  
 DELAY \<time\>  
 F \<function to execute\>  \[Variables to pass to function [[WIP]]\]  
 \# can be placed anywhere, lines beginning with \# are ignored and any text in lines after \# is ignored
@@ -37,12 +37,12 @@ F \<function to execute\>  \[Variables to pass to function [[WIP]]\]
 
 ```
 [main] # The codeblock that get's executed when a script is run
-M0 0          # Motor 0, go to position 0°
-M1 0          # Motor 1, go to position 0°
-M2 90         # Motor 2, go to position 90°
+S0 0          # Servo 0, go to position 0°
+S1 0          # Servo 1, go to position 0°
+S2 90         # Servo 2, go to position 90°
 DELAY 500     # Wait for half a second
-M0 90 2500    # Motor 0, go to position 90° in linear steps, over a period of 2,5 seconds
-DELAY 2500    # wait for motor 0 to go to position 90°
-M1 180        # Motor 1, go to position 180°
+S0 90 2500    # Servo 0, go to position 90° in linear steps, over a period of 2,5 seconds
+DELAY 2500    # wait for Servo 0 to go to position 90°
+S1 180        # Servo 1, go to position 180°
 ```
 
