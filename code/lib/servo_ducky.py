@@ -1,6 +1,7 @@
 
 import os
 import asyncio
+import board
 
 from adafruit_pca9685 import PCA9685
 from adafruit_motor import servo
@@ -10,6 +11,7 @@ from adafruit_motor import servo
 
 
 class servoducky():
+
 
     SERVO_DEFAULTS = { }
 
@@ -31,6 +33,7 @@ class servoducky():
     CLASS_DEFAULTS["script_dir"] = "/scripts"
     CLASS_DEFAULTS["servo_configs"] = { }
     CLASS_DEFAULTS["number_of_servos"] = 16
+    CLASS_DEFAULTS["neopixel_pin"] = board.GP16
 
 
 
@@ -38,6 +41,15 @@ class servoducky():
 
 
     def __init__(self,**kwargs):
+
+
+
+        try:
+            import neopixel
+            self.NEOPIXEL_LIB = True
+        except Exception as e:
+            self.NEOPIXEL_LIB = False
+
 
 
         self.class_args = kwargs
@@ -64,6 +76,19 @@ class servoducky():
 
         self._list_scripts()
         self.__init_servos__()
+
+        if self.NEOPIXEL_LIB:
+            self.status_led =  neopixel.NeoPixel(self.class_args["neopixel_pin"], 1, brightness=0.5, auto_write=True)
+            self.status_led.fill((250,250,0))
+            self.status_led.show()
+
+    def set_status_led(self,color):
+
+
+        pass
+
+
+
 
     def __init_servos__(self):
 
@@ -101,6 +126,9 @@ class servoducky():
         for line in config.split("\n"):
             if line.strip() == "":
                 continue
+
+            line = line.split("#")[0]
+            line = line.strip()
             if line.startswith("["):
                 section = line.replace("[","").replace("]","")
                 if section not in sections:
@@ -126,6 +154,93 @@ class servoducky():
         self.scripts = scode_files
 
 
+
+
+    async def run_script(self,script_name):
+
+        if script_name not in self.scripts:
+            print("script not found")
+            return
+
+        script = self.read_script(script_name)
+
+        await self._execute_function(script["main"])
+
+
+    async def _execute_function(self,function,**args):
+
+        for line in function:
+
+            line_split = line.split()
+            if line.startswith("S"):
+                servo_id = line[1]
+                servo_angle = int(line.split(" ")[1])
+                if len(line_split) == 2:
+                    print("setting servo: " + servo_id + " to angle " + str(servo_angle))
+                    self.servos[servo_id]["servo"].angle = servo_angle
+                else:
+
+
+                    servo_time = int(line_split[2])
+
+
+
+                    current_pos = int(self.servos[servo_id]["servo"].angle)
+                    pos_diff = int(abs(current_pos - servo_angle))
+
+
+
+                    delay_time = (servo_time / pos_diff) / 100
+
+                    for step in range(current_pos,servo_angle,1):
+                        self.servos[servo_id]["servo"].angle = step
+                        await asyncio.sleep(delay_time)
+
+
+            if line.startswith("DELAY"):
+
+
+                if len(line_split) < 2:
+                    print("No delay time specified in line: " + line)
+                    delay_time = 100
+                else:
+                    delay_time = line_split[1]
+
+                delay_time = float(delay_time)
+
+                delay_time = delay_time / 100
+
+                print("sleeping for: " + str(delay_time))
+
+                await asyncio.sleep(delay_time)
+
+
+
+
+import busio
+SCL_PIN = board.GP1
+SDA_PIN = board.GP0
+PCA_FREQ = 60
+PCA_DUTY_CYCLE = 0x7FFF
+NUMBER_OF_SERVOS = 4
+
+# Create the I2C bus interface.
+i2c = busio.I2C(SCL_PIN,SDA_PIN)    # Pi Pico RP2040
+pca = PCA9685(i2c)
+pca.frequency = PCA_FREQ
+pca.channels[0].duty_cycle = PCA_DUTY_CYCLE
+
+
+s = servoducky(pca=pca)
+
+
+async def main():
+
+    await s.run_script("example_script_1")
+
+asyncio.run(main())
+
+## asyncio, read up on diffirence of just running await and proper create_task
 
 
 
