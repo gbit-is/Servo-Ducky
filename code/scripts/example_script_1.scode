@@ -6,7 +6,7 @@ R routine_1 S0 S1
 
 
 [routine_1]
-_0 100
+_0 200
 DELAY 100
 _1 0
 delay 100
