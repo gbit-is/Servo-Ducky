@@ -193,6 +193,17 @@ class servoducky():
             if line.startswith("S"):
                 servo_id = line[1]
                 servo_angle = int(line.split(" ")[1])
+
+
+                actuation_range = self.servos[servo_id]["servo"].actuation_range
+                if servo_angle > actuation_range:
+                    print("WARNING: ")
+                    print('LINE: "' + line + '" is invalid')
+                    print("movement is defined at: " + str(servo_angle) + "° but the max range is: " + str(actuation_range) +"°")
+                    print("reducing ange to: " + str(actuation_range))
+                    servo_angle = actuation_range
+
+
                 if len(line_split) == 2:
                     print("setting servo: " + servo_id + " to angle " + str(servo_angle))
                     self.servos[servo_id]["servo"].angle = servo_angle
