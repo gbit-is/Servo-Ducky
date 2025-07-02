@@ -79,13 +79,22 @@ class servoducky():
 
         if self.NEOPIXEL_LIB:
             self.status_led =  neopixel.NeoPixel(self.class_args["neopixel_pin"], 1, brightness=0.5, auto_write=True)
-            self.status_led.fill((250,250,0))
-            self.status_led.show()
+            self.set_status_led("green")
 
     def set_status_led(self,color):
 
+        colors = { }
 
-        pass
+        colors["red"] = (255, 0, 0)
+        colors["yellow"] = (255, 150, 0)
+        colors["green"] = (0, 255, 0)
+        colors["cyan"] = (0, 255, 255)
+        colors["blue"] = (0, 0, 255)
+        colors["purple"] = (180, 0, 255)
+
+
+        self.status_led.fill(colors[color])
+        self.status_led.show()
 
 
 
@@ -195,12 +204,13 @@ class servoducky():
                 servo_angle = int(line.split(" ")[1])
 
 
+
                 actuation_range = self.servos[servo_id]["servo"].actuation_range
                 if servo_angle > actuation_range:
                     print("WARNING: ")
                     print('LINE: "' + line + '" is invalid')
                     print("movement is defined at: " + str(servo_angle) + "° but the max range is: " + str(actuation_range) +"°")
-                    print("reducing ange to: " + str(actuation_range))
+                    print("reducing angle to: " + str(actuation_range))
                     servo_angle = actuation_range
 
 

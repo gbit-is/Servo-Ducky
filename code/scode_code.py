@@ -3,6 +3,8 @@ import busio
 import time
 import os
 
+import usb_cdc
+
 from servo_ducky import servoducky
 import asyncio
 from adafruit_pca9685 import PCA9685
@@ -25,6 +27,21 @@ pca.channels[0].duty_cycle = PCA_DUTY_CYCLE
 
 s = servoducky(pca=pca)
 
+uart = usb_cdc.data
+
+uart.write("foo")
+
+while True:
+
+    data = uart.read(1)
+
+    print(data)
+
+
+    if data is not None:
+        print(data)
+    else:
+        print("foo")
 
 
 
