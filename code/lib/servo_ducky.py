@@ -164,14 +164,32 @@ class servoducky():
 
         script = self.read_script(script_name)
 
-        await self._execute_function(script["main"])
+        function_name = "main"
+        await self._execute_function(script,function_name)
 
 
-    async def _execute_function(self,function,**args):
+    async def _execute_function(self,script,function_name,params=[]):
+
+        function = script[function_name]
+
+
 
         for line in function:
 
+
+
             line_split = line.split()
+
+            if line.startswith("_"):
+
+                var_string = line.split()[0]
+                var_id = int(var_string.replace("_",""))
+                var_value = params[var_id]
+
+                line = line.replace(var_string,var_value)
+
+
+
             if line.startswith("S"):
                 servo_id = line[1]
                 servo_angle = int(line.split(" ")[1])
@@ -184,7 +202,6 @@ class servoducky():
                     servo_time = int(line_split[2])
 
 
-
                     current_pos = int(self.servos[servo_id]["servo"].angle)
                     pos_diff = int(abs(current_pos - servo_angle))
 
@@ -192,12 +209,14 @@ class servoducky():
 
                     delay_time = (servo_time / pos_diff) / 100
 
+                    print("setting servo: " + servo_id + " to angle " + str(servo_angle) + " in: " + str(servo_time) + " ms")
+
                     for step in range(current_pos,servo_angle,1):
                         self.servos[servo_id]["servo"].angle = step
                         await asyncio.sleep(delay_time)
 
 
-            if line.startswith("DELAY"):
+            elif line.startswith("DELAY"):
 
 
                 if len(line_split) < 2:
@@ -213,6 +232,17 @@ class servoducky():
                 print("sleeping for: " + str(delay_time))
 
                 await asyncio.sleep(delay_time)
+
+            elif line.startswith("R"):
+                params = line.split()
+                params.pop(0)
+                routine = params[0]
+                params.pop(0)
+
+                print("executing function: " + routine + " with params: " + str(params))
+                await self._execute_function(script,routine,params)
+
+
 
 
 
