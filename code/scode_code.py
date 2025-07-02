@@ -25,7 +25,8 @@ pca.channels[0].duty_cycle = PCA_DUTY_CYCLE
 
 s = servoducky(pca=pca)
 
-x = s.servos["1"]["servo"]
+
+
 
 
 
