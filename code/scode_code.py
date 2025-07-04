@@ -10,6 +10,9 @@ import asyncio
 from adafruit_pca9685 import PCA9685
 
 
+import supervisor
+supervisor.runtime.autoreload = False
+
 
 
 SCL_PIN = board.GP1
@@ -29,19 +32,54 @@ s = servoducky(pca=pca)
 
 uart = usb_cdc.data
 
-uart.write("foo")
+
+serial_data = b""
+
+break_characters = [ "@", "\r" ]
+
 
 while True:
 
+
+
+    #asyncio.run(s.execute_command("S0 0"))
+    #asyncio.run(s.execute_command("DELAY 100"))
+    #asyncio.run(s.execute_command("S0 180"))
+
     data = uart.read(1)
 
-    print(data)
+    serial_data += data
+
+    #print("....." + str(serial_data))
+    #print(type(serial_data))
 
 
-    if data is not None:
-        print(data)
-    else:
-        print("foo")
+
+    if any(breaking_character in serial_data for breaking_character in break_characters):
+        serial_command = serial_data
+
+        serial_command = serial_command.decode()
+
+        serial_data = b""
+
+        #print(str(serial_command) + "___")
+        serial_command = serial_command.replace("@","")
+
+        serial_command = serial_command.upper()
+
+        if serial_command.startswith("R"):
+            script_name = serial_command.split()[1]
+            print("From Serial|Executing script: " + script_name)
+
+            asyncio.run(s.run_script(script_name))
+        else:
+            print("From Serial|Executing command: " + serial_command)
+            asyncio.run(s.execute_command(serial_command))
+
+
+
+
+
 
 
 

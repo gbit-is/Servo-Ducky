@@ -180,11 +180,10 @@ class servoducky():
     async def _execute_function(self,script,function_name,params=[]):
 
         function = script[function_name]
-
-
-
         for line in function:
+            await self.execute_command(line,script,params)
 
+    async def execute_command(self,line,script="",params=[]):
 
 
             line_split = line.split()
@@ -200,8 +199,19 @@ class servoducky():
 
 
             if line.startswith("S"):
-                servo_id = line[1]
-                servo_angle = int(line.split(" ")[1])
+
+
+                line = line[1:]
+
+
+                servo_id = line.split()[0]
+
+
+                servo_angle = int(line.split()[1])
+                #servo_angle = line.split(" ")
+
+
+
 
 
 
@@ -222,17 +232,27 @@ class servoducky():
 
                     servo_time = int(line_split[2])
 
+                    if servo_time == 0:
+                        servo_time = 1
+
+
 
                     current_pos = int(self.servos[servo_id]["servo"].angle)
+                    if current_pos > 400:
+                        current_pos = 1
+
+
                     pos_diff = int(abs(current_pos - servo_angle))
 
 
 
                     delay_time = (servo_time / pos_diff) / 100
 
-                    print("setting servo: " + servo_id + " to angle " + str(servo_angle) + " in: " + str(servo_time) + " ms")
+                    print("setting servo: " + servo_id + " from angle " + str(current_pos) + " to angle " + str(servo_angle) + " in: " + str(servo_time) + " ms")
+
 
                     for step in range(current_pos,servo_angle,1):
+                        print("Stepping servo: " + servo_id + " to " + str(step) )
                         self.servos[servo_id]["servo"].angle = step
                         await asyncio.sleep(delay_time)
 
@@ -263,6 +283,15 @@ class servoducky():
                 print("executing function: " + routine + " with params: " + str(params))
                 await self._execute_function(script,routine,params)
 
+            elif line.startswith("G"):
+
+                print(line)
+                params = line.split()
+                params.pop(0)
+                if params[0].startswith("S"):
+                    pass
+
+
 
 
 
@@ -290,7 +319,10 @@ if __name__ == "__main__":
 
     async def main():
 
-        await s.run_script("example_script_1")
+        #await s.run_script("example_script_2")
+        await s.execute_command("S0 90 500")
+        #await s.execute_command("DELAY 100 ")
+        #await s.execute_command("S0 180 100")
 
     asyncio.run(main())
 

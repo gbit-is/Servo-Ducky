@@ -1,0 +1,19 @@
+[main]
+S0 0
+DELAY 150 # hello there
+S0 180  300
+R routine_1 S0 S1
+delay 700
+R routine_1 S1 S0
+delay 5000
+R routine_1 S2 S3
+
+
+[routine_1]
+_0 200
+DELAY 100
+_1 0
+delay 100
+_0 0
+delay 10
+_1 120
