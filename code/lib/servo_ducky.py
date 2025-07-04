@@ -319,8 +319,8 @@ if __name__ == "__main__":
 
     async def main():
 
-        #await s.run_script("example_script_2")
-        await s.execute_command("S0 90 500")
+        await s.run_script("es1")
+        #await s.execute_command("S0 90 500")
         #await s.execute_command("DELAY 100 ")
         #await s.execute_command("S0 180 100")
 

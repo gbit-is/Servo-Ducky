@@ -65,14 +65,17 @@ while True:
         #print(str(serial_command) + "___")
         serial_command = serial_command.replace("@","")
 
-        serial_command = serial_command.upper()
+        #serial_command = serial_command.upper()
 
-        if serial_command.startswith("R"):
+        if serial_command.upper().startswith("R"):
             script_name = serial_command.split()[1]
             print("From Serial|Executing script: " + script_name)
 
             asyncio.run(s.run_script(script_name))
         else:
+
+            serial_command = serial_command.upper()
+
             print("From Serial|Executing command: " + serial_command)
             asyncio.run(s.execute_command(serial_command))
 
