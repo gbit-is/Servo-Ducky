@@ -2,6 +2,7 @@ import board
 import busio
 import time
 import os
+import json
 
 import usb_cdc
 
@@ -13,6 +14,8 @@ from adafruit_pca9685 import PCA9685
 import supervisor
 supervisor.runtime.autoreload = False
 
+
+WHOIS_ID = "servo_ducky_v0"
 
 
 SCL_PIN = board.GP1
@@ -67,14 +70,27 @@ while True:
 
         #serial_command = serial_command.upper()
 
+        print("....")
+        print(serial_command.upper())
+
         if serial_command.upper().startswith("R"):
             script_name = serial_command.split()[1]
             print("From Serial|Executing script: " + script_name)
 
             asyncio.run(s.run_script(script_name))
+
+        elif "WHOIS" in serial_command.upper():
+            uart.write(WHOIS_ID)
+
+        elif "LIST_SERVOS" in serial_command.upper():
+            servo_info = s._list_servos()
+            uart.write(json.dumps(servo_info))
+
         else:
 
             serial_command = serial_command.upper()
+
+            serial_command = serial_command.strip()
 
             print("From Serial|Executing command: " + serial_command)
             asyncio.run(s.execute_command(serial_command))
