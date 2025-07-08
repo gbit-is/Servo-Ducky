@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Web Serial Terminal</title>
+  <style>
+    body { font-family: monospace; padding: 20px; }
+    #terminal { width: 100%; height: 300px; background: #000; color: #0f0; padding: 10px; overflow-y: auto; white-space: pre-wrap; }
+    #input { width: 100%; }
+  </style>
+</head>
+<body>
+  <h1>Web Serial Terminal</h1>
+  <button id="connect">Connect</button>
+  <div id="terminal"></div>
+  <input id="input" type="text" placeholder="Type a command..." />
+  <button id="init">init</button>
+
+  <div id="slider_container"></div>
+
+  <script>
+    let port;
+    let reader;
+    let writer;
+
+    const terminal = document.getElementById('terminal');
+    const input = document.getElementById('input');
+    const connectButton = document.getElementById('connect');
+
+
+    const filters = [
+  	{ usbVendorId: 11914 }, 
+	];
+
+    function logToTerminal(data) {
+      terminal.textContent += data;
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+
+
+    function on_slider_change(event) {
+
+	    let value = event.target.value;
+	    let id = event.target.id
+	    //console.log("on slider change .... ");
+	    //console.log(value,id)
+
+	    command = "S" + id + " " + value
+	    sendToSerial(command)
+
+
+    }
+
+    function generate_sliders(servo_data_raw) {
+
+	const slider_box = document.getElementById("slider_container");
+
+
+	    console.log("generate sliders")
+
+	    var servo_data = JSON.parse(servo_data_raw);
+	    var br = document.createElement("br");
+
+
+	    for ( const servo in servo_data.slice(0,-1)) {
+
+		    var slider_div = document.createElement("div");
+
+
+		    servo_id = servo_data[servo][0] ; 
+		    servo_range = servo_data[servo][1] ;
+
+		    var slider = document.createElement("input");
+		    slider.id = servo_id;
+		    slider.type = "range";
+		    slider.min = 0;
+		    slider.max = servo_range;
+		    slider.value = servo_range / 2;
+		    slider.step = 1;
+		    //slider.onchange = on_slider_change(event.target.id, event.target.value)
+		    slider.addEventListener("input", function(event) {
+  			  on_slider_change(event);
+			});
+
+
+		    slider_div.appendChild(slider);
+		    slider_box.appendChild(slider_div);
+
+
+
+   		}
+
+
+
+
+    }
+
+    //let servo_data_raw = '[[0, 180], [1, 180], [2, 180], [3, 180], [4, 180], [5, 180], [6, 180], [7, 180], [8, 180], [9, 180], [10, 180], [11, 180], [12, 180], [13, 180], [14, 180], [15, 180], "DONE"]'
+    //generate_sliders(servo_data_raw);
+
+
+    async function connectSerial() {
+      try {
+	port = await navigator.serial.requestPort({ filters } );
+	const info = port.getInfo();
+	//console.log(info)
+        await port.open({ baudRate: 9600 });
+
+        logToTerminal("✅ Connected\n");
+
+
+        // Setup writer
+        writer = port.writable.getWriter();
+
+        // Setup reader
+        const decoder = new TextDecoderStream();
+        const inputDone = port.readable.pipeTo(decoder.writable);
+        const inputStream = decoder.readable;
+        reader = inputStream.getReader();
+
+	sendToSerial("list_servos")
+
+
+	
+
+	let servo_data = "";
+
+	while (true) {
+      	  const { value, done } = await reader.read();
+	  servo_data += value
+	  //console.log(servo_data)
+	  if (servo_data.includes("DONE")) break;
+	}
+
+	//console.log(servo_data)
+	generate_sliders(servo_data)
+	
+
+
+        // Read loop
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          if (value) logToTerminal(value);
+        }
+
+      } catch (err) {
+        logToTerminal("❌ Error: " + err.message + "\n");
+      }
+    }
+
+    async function sendToSerial(data) {
+      if (!writer) {
+        logToTerminal("⚠️ Not connected.\n");
+        return;
+      }
+      const encoded = new TextEncoder().encode(data + "\r\n");
+      await writer.write(encoded);
+      logToTerminal("> " + data + "\n");
+    }
+
+    connectButton.addEventListener('click', connectSerial);
+
+    input.addEventListener('keydown', async (e) => {
+      if (e.key === 'Enter') {
+        const value = input.value.trim();
+        if (value !== '') {
+          await sendToSerial(value);
+          input.value = '';
+        }
+      }
+    });
+  </script>
+</body>
+</html>
+
