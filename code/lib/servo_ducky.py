@@ -2,6 +2,8 @@
 import os
 import asyncio
 import board
+import supervisor
+import time
 
 from adafruit_pca9685 import PCA9685
 from adafruit_motor import servo
@@ -202,14 +204,25 @@ class servoducky():
 
 
                 line = line[1:]
+                line_split = line.split()
 
 
-                servo_id = line.split()[0]
+
+                line = line[1:]
 
 
-                servo_angle = int(line.split()[1])
-                #servo_angle = line.split(" ")
+                servo_id = line_split[0]
 
+
+
+
+                if servo_id not in self.servos:
+                    print("Invalid servo: " + servo_id)
+                    return
+
+
+
+                servo_angle = int(line_split[1])
 
 
 
@@ -237,7 +250,11 @@ class servoducky():
 
 
 
+
                     current_pos = int(self.servos[servo_id]["servo"].angle)
+
+
+
                     if current_pos > 400:
                         current_pos = 1
 
@@ -246,15 +263,40 @@ class servoducky():
 
 
 
+
                     delay_time = (servo_time / pos_diff) / 100
 
                     print("setting servo: " + servo_id + " from angle " + str(current_pos) + " to angle " + str(servo_angle) + " in: " + str(servo_time) + " ms")
 
+                    step_val = 1
+                    if servo_angle < current_pos:
+                        step_val = step_val * -1
 
-                    for step in range(current_pos,servo_angle,1):
+
+                    invalid_step = True
+
+                    start_step_time_ms = supervisor.ticks_ms()
+                    start_step_time_s = time.monotonic()
+
+
+                    for step in range(current_pos,servo_angle,step_val):
+                        invalid_step = False
                         print("Stepping servo: " + servo_id + " to " + str(step) )
                         self.servos[servo_id]["servo"].angle = step
                         await asyncio.sleep(delay_time)
+
+                    if invalid_step:
+                        print("else break")
+                        self.servos[servo_id]["servo"].angle = servo_angle
+
+
+                    stop_step_time_ms = supervisor.ticks_ms()
+                    stop_step_time_s = time.monotonic()
+
+                    delta_step_time_ms = stop_step_time_ms - start_step_time_ms
+                    delta_step_time_s = stop_step_time_s - start_step_time_s
+                    #print(delta_step_time_ms)
+                    #print(delta_step_time_s)
 
 
             elif line.startswith("DELAY"):
@@ -319,10 +361,10 @@ if __name__ == "__main__":
 
     async def main():
 
-        await s.run_script("es1")
-        #await s.execute_command("S0 90 500")
+        #await s.run_script("es1")
+        await s.execute_command("S0 90")
         #await s.execute_command("DELAY 100 ")
-        #await s.execute_command("S0 180 100")
+        await s.execute_command("S0 10 500")
 
     asyncio.run(main())
 
