@@ -124,6 +124,26 @@ class servoducky():
             self.servos[servo_id]["servo"] = servo.Servo(pca.channels[sc["channel"]], min_pulse=sc["min_pulse"], max_pulse=sc["max_pulse"], actuation_range=sc["actuation_range"])
 
 
+    def _list_servos(self):
+
+        servo_list = [ ]
+        servo_info = [ ]
+
+        for servo in self.servos:
+            servo_list.append(int(servo))
+
+        servo_list.sort()
+
+        for servo in servo_list:
+            servo_data = self.servos[str(servo)]
+            servo_info.append([servo,servo_data["actuation_range"]])
+
+
+        servo_info.append("DONE")
+
+        return servo_info
+
+
 
 
     def read_script(self,script_name):
@@ -187,6 +207,7 @@ class servoducky():
 
     async def execute_command(self,line,script="",params=[]):
 
+            print("......" + line)
 
             line_split = line.split()
 
@@ -221,8 +242,11 @@ class servoducky():
                     return
 
 
-
-                servo_angle = int(line_split[1])
+                try:
+                    servo_angle = int(line_split[1])
+                except:
+                    print(line_split[1] + " is not an interger")
+                    return
 
 
 
@@ -295,8 +319,8 @@ class servoducky():
 
                     delta_step_time_ms = stop_step_time_ms - start_step_time_ms
                     delta_step_time_s = stop_step_time_s - start_step_time_s
-                    #print(delta_step_time_ms)
-                    #print(delta_step_time_s)
+                    print(delta_step_time_ms)
+                    print(delta_step_time_s)
 
 
             elif line.startswith("DELAY"):
@@ -359,12 +383,17 @@ if __name__ == "__main__":
     s = servoducky(pca=pca)
 
 
+
+
+
     async def main():
 
+
+
         #await s.run_script("es1")
-        await s.execute_command("S0 90")
+        await s.execute_command("S0 10")
         #await s.execute_command("DELAY 100 ")
-        await s.execute_command("S0 10 500")
+        #await s.execute_command("S0 180 2000")
 
     asyncio.run(main())
 
