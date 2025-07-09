@@ -136,7 +136,13 @@ class servoducky():
 
         for servo in servo_list:
             servo_data = self.servos[str(servo)]
-            servo_info.append([servo,servo_data["actuation_range"]])
+
+            servo_id = servo
+            servo_range = servo_data["actuation_range"]
+            servo_angle = self.servos[str(servo_id)]["servo"].angle
+            servo_angle = 0
+
+            servo_info.append([servo_id,servo_range,servo_angle])
 
 
         servo_info.append("DONE")
@@ -389,9 +395,9 @@ if __name__ == "__main__":
     async def main():
 
 
-
+        s._list_servos()
         #await s.run_script("es1")
-        await s.execute_command("S0 10")
+        #await s.execute_command("S0 10")
         #await s.execute_command("DELAY 100 ")
         #await s.execute_command("S0 180 2000")
 
