@@ -2,21 +2,57 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Web Serial Terminal</title>
+  <title>SDCC</title>
   <style>
     body { font-family: monospace; padding: 20px; }
-    #terminal { width: 100%; height: 300px; background: #000; color: #0f0; padding: 10px; overflow-y: auto; white-space: pre-wrap; }
+    #terminal { width: 100%; height: 25vh; background: #000; color: #0f0; padding: 10px; overflow-y: auto; white-space: pre-wrap; }
     #input { width: 100%; }
+    .slider_class {
+	    width: 50%;
+
+    }
+    .container{
+	height: 60vh;
+    	display: flex;
+	}
+	.fixed{
+    	width: 60%;
+	}
+	.flex-item{
+    	flex-grow: 1;
+	}
+.container .scode{
+  resize: none;
+  outline: none;
+  width: 100%;
+  padding: 10px;
+  height: 100%;
+  margin: -10px;
+}
+
   </style>
 </head>
 <body>
-  <h1>Web Serial Terminal</h1>
+  <h1>Servo Ducky Command Center</h1>
   <button id="connect">Connect</button>
   <div id="terminal"></div>
   <input id="input" type="text" placeholder="Type a command..." />
-  <button id="init">init</button>
+  <br>
 
-  <div id="slider_container"></div>
+<div class="container">
+  <div class="fixed" id="slider_container"></div>
+  <div class="flex-item">
+
+	  <!-- <textarea id="scode" name="scode" rows="20" cols="50">  </textarea> -->
+
+
+	   <textarea class="scode" id="scode_box"></textarea>
+
+  <br>
+
+  </div>
+</div>
+
 
   <script>
     let port;
@@ -28,6 +64,8 @@
     const connectButton = document.getElementById('connect');
 
 
+    add_to_textbox("[main]")
+
     const filters = [
   	{ usbVendorId: 11914 }, 
 	];
@@ -37,13 +75,26 @@
       terminal.scrollTop = terminal.scrollHeight;
     }
 
+    function isNumber(n) { return !isNaN(parseFloat(n)) && !isNaN(n - 0) }
+    function cssEscape(id) { return CSS.escape(id);  }
+
+
 
     function on_slider_change(event) {
 
+	    console.log("update slider ...")
 	    let value = event.target.value;
 	    let id = event.target.id
 	    //console.log("on slider change .... ");
 	    //console.log(value,id)
+
+	    numbox_id = "numbox" + id
+
+	    let number_box = document.getElementById(numbox_id);
+
+	    //console.log(number_box);
+	    number_box.innerHTML = value ;
+
 
 	    command = "S" + id + " " + value
 	    sendToSerial(command)
@@ -51,12 +102,33 @@
 
     }
 
+    function add_to_textbox(line) {
+	console.log(line)
+	document.getElementById("scode_box").value += line + "\n";
+
+
+    }
+
+    function click_add(event) {
+	    let servo_id = event.target.value;
+
+	    let servo_value = document.getElementById(servo_id).value ; 
+
+	    command = "S" + servo_id + " " + servo_value;
+
+	    add_to_textbox(command);
+
+
+    }
+
     function generate_sliders(servo_data_raw) {
+
+
 
 	const slider_box = document.getElementById("slider_container");
 
 
-	    console.log("generate sliders")
+	    //console.log("generate sliders")
 
 	    var servo_data = JSON.parse(servo_data_raw);
 	    var br = document.createElement("br");
@@ -69,21 +141,54 @@
 
 		    servo_id = servo_data[servo][0] ; 
 		    servo_range = servo_data[servo][1] ;
+		    servo_angle = servo_data[servo][2] ;
+
+
+
+		    if ( ! isNumber(servo_angle) ) {
+			    servo_angle_num = 0 ;
+			    servo_angle_text = "Err" ;
+		    } else {
+			    servo_angle_num = servo_angle
+			    servo_angle_text = servo_angle_num
+		    }
+
+
+
 
 		    var slider = document.createElement("input");
 		    slider.id = servo_id;
 		    slider.type = "range";
 		    slider.min = 0;
 		    slider.max = servo_range;
-		    slider.value = servo_range / 2;
+		    slider.value = servo_angle_num;
+		    slider.classList.add("slider_class");
 		    slider.step = 1;
 		    //slider.onchange = on_slider_change(event.target.id, event.target.value)
 		    slider.addEventListener("input", function(event) {
   			  on_slider_change(event);
 			});
 
+		    var numbox = document.createElement("span");
+		    numbox.id = "numbox" + servo_id ;
+		    numbox.classList.add("numbox_class")
+		    numbox.textContent = servo_angle_text;
+
+		    let add_button = document.createElement("button");
+		    add_button.innerHTML = "+" ; 
+		    add_button.id = "add" + servo_id ; 
+		    add_button.value = servo_id ;
+		    //add_button.addEventListener("click",click_add)
+		    add_button.addEventListener("click", function(event) {
+  			  click_add(event);
+			});
+
+
+
 
 		    slider_div.appendChild(slider);
+		    slider_div.appendChild(numbox);
+		    slider_div.appendChild(add_button);
 		    slider_box.appendChild(slider_div);
 
 
@@ -95,8 +200,8 @@
 
     }
 
-    //let servo_data_raw = '[[0, 180], [1, 180], [2, 180], [3, 180], [4, 180], [5, 180], [6, 180], [7, 180], [8, 180], [9, 180], [10, 180], [11, 180], [12, 180], [13, 180], [14, 180], [15, 180], "DONE"]'
-    //generate_sliders(servo_data_raw);
+    let servo_data_raw = '[[0, 180, 91.8033], [1, 180, 47.7377], [2, 180, 126.776], [3, 180, 54.7322], [4, 180, "Err_none"], [5, 180, "Err_none"], [6, 180, "Err_none"], [7, 180, "Err_none"], [8, 180, "Err_none"], [9, 180, "Err_none"], [10, 180, "Err_none"], [11, 180, "Err_none"], [12, 180, "Err_none"], [13, 180, "Err_none"], [14, 180, "Err_none"], [15, 180, "Err_none"], "DONE"]'
+    generate_sliders(servo_data_raw);
 
 
     async function connectSerial() {
