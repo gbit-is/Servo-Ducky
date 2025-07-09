@@ -81,7 +81,6 @@
     const connectButton = document.getElementById('connect');
 
 
-    add_to_textbox("[main]")
 
     const filters = [
   	{ usbVendorId: 11914 }, 
@@ -94,6 +93,20 @@
 
     function isNumber(n) { return !isNaN(parseFloat(n)) && !isNaN(n - 0) }
     function cssEscape(id) { return CSS.escape(id);  }
+
+    function getCookie(name) {
+    const decodedCookies = decodeURIComponent(document.cookie);
+    const cookies = decodedCookies.split(';');
+
+    for (let cookie of cookies) {
+        cookie = cookie.trim(); // Remove leading whitespace
+        if (cookie.startsWith(name + "=")) {
+            return cookie.substring((name + "=").length);
+        }
+    }
+    	return null;
+    }
+
 
 
 
@@ -119,9 +132,30 @@
 
     }
 
+    function execute_tmp_script() {
+
+	    script_content = document.getElementById("scode_box").value
+
+
+
+    }
+
+    function save_scode_to_cookie() {
+
+	console.log("saving scode to cookie")
+	let contents = document.getElementById("scode_box").value
+
+	console.log(contents)
+	document.cookie = "scode_contents=" + encodeURIComponent(contents)
+
+
+	   }
+
     function add_to_textbox(line) {
-	console.log(line)
+	//console.log(line)
 	document.getElementById("scode_box").value += line + "\n";
+
+	save_scode_to_cookie()
 
 
     }
@@ -292,6 +326,92 @@
         }
       }
     });
+
+document.getElementById("open_script").addEventListener("click", function() {
+    // Create a hidden file input
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".scode"; // restrict to .scode files
+
+    // Handle file selection
+    input.onchange = function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Read the file
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const contents = e.target.result;
+            document.getElementById("scode_box").value = contents;
+    	    save_scode_to_cookie()
+        };
+        reader.readAsText(file); // read the file as text
+    };
+
+
+
+    // Trigger file picker
+    input.click();
+
+});
+
+
+    document.getElementById("save_script").addEventListener("click", async function() {
+    try {
+        // Open a file save picker
+        const handle = await window.showSaveFilePicker({
+            suggestedName: "script.scode",
+            types: [
+                {
+                    description: "Script Code Files",
+                    accept: {
+                        "text/plain": [".scode"]
+                    }
+                }
+            ]
+        });
+
+        // Create a writable stream
+        const writable = await handle.createWritable();
+
+        // Get content from textarea
+        const content = document.getElementById("scode_box").value;
+
+        // Write content to file
+        await writable.write(content);
+
+        // Close the file and write to disk
+        await writable.close();
+
+        console.log("File saved successfully!");
+    } catch (err) {
+        if (err.name !== 'AbortError') {
+            console.error("Save failed:", err);
+        }
+    }
+});
+
+
+      document.getElementById("run_script").addEventListener("click", execute_tmp_script);
+
+
+    const savedContents = getCookie("scode_contents");
+
+    if (savedContents !== null) {
+	    if ( savedContents == "" ){
+		    add_to_textbox("[main]")
+	    } else {
+        	document.getElementById("scode_box").value = savedContents;
+		}
+
+    } else {
+	    add_to_textbox("[main]")
+    }
+
+    document.getElementById("scode_box").addEventListener("input", save_scode_to_cookie);
+
+
+
   </script>
 </body>
 </html>
