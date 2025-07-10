@@ -8,7 +8,7 @@
     #terminal { width: 100%; height: 25vh; background: lightsteelblue; color: black; padding: 10px; overflow-y: auto; white-space: pre-wrap; }
     #input { width: 100%; }
     .slider_class {
-	    width: 50%;
+	    width: 100%;
 
     }
     .container{
@@ -189,6 +189,10 @@
 
     }
 
+    function pad(width, string, padding) {
+  	return (width <= string.length) ? string : pad(width, padding + string, padding)
+	}
+
     function generate_sliders(servo_data) {
 
 
@@ -204,16 +208,21 @@
 	    console.log(servo_data)
 	    console.log("foo")
 
+	    const slider_box_div = document.createElement("div");
+	    slider_box_div.style.width = "100%";
+	    slider_box_div.style.display= "table";
+
 	    for ( const servo in servo_data) { 
 
 		    console.log(servo);
 
-		    var slider_div = document.createElement("div");
+		    var slider_row = document.createElement("div");
 
+		    slider_row.style.display = "table-row";
 
-		    servo_id = servo_data[servo][0] ; 
-		    servo_range = servo_data[servo][1] ;
-		    servo_angle = servo_data[servo][2] ;
+		    let servo_id = servo_data[servo][0] ; 
+		    let servo_range = servo_data[servo][1] ;
+		    let servo_angle = servo_data[servo][2] ;
 
 
 
@@ -221,12 +230,27 @@
 			    servo_angle_num = 0 ;
 			    servo_angle_text = "Err" ;
 		    } else {
-			    servo_angle_num = servo_angle
+			    servo_angle_num = Math.floor(servo_angle)
 			    servo_angle_text = servo_angle_num
 		    }
 
 
+		    console.log(servo_angle_text)
+		    servo_angle_text = pad(10,servo_angle_text," ")
+		    console.log(servo_angle_text)
+		    console.log("...")
 
+
+		    var slider_div = document.createElement("div");
+		    slider_div.style.display = "table-cell";
+		    slider_div.style.width = "75%";
+
+		    var servo_name_div = document.createElement("div");
+		    servo_name_div.style.display = "table-cell";
+		    servo_name_div.style.width = "8%";
+
+		    var servo_name_span = document.createElement("span");
+		    servo_name_span.textContent = "Servo " + servo_id ;
 
 		    var slider = document.createElement("input");
 		    slider.id = servo_id;
@@ -241,10 +265,17 @@
   			  on_slider_change(event);
 			});
 
+		    var numbox_div = document.createElement("div");
+		    numbox_div.style.display = "table-cell";
+		    numbox_div.style.paddingLeft = "2%";
+
 		    var numbox = document.createElement("span");
 		    numbox.id = "numbox" + servo_id ;
 		    numbox.classList.add("numbox_class")
 		    numbox.textContent = servo_angle_text;
+
+		    var addbutton_div = document.createElement("div");
+		    addbutton_div.style.display = "table-cell";
 
 		    let add_button = document.createElement("button");
 		    add_button.innerHTML = "+" ; 
@@ -257,15 +288,21 @@
 
 
 
+		    servo_name_div.appendChild(servo_name_span) 
+		    slider_div.appendChild(slider)
+		    numbox_div.appendChild(numbox)
+		    addbutton_div.appendChild(add_button)
 
-		    slider_div.appendChild(slider);
-		    slider_div.appendChild(numbox);
-		    slider_div.appendChild(add_button);
-		    slider_box.appendChild(slider_div);
+		    slider_row.appendChild(servo_name_div);
+		    slider_row.appendChild(slider_div);
+		    slider_row.appendChild(numbox_div);
+		    slider_row.appendChild(addbutton_div);
 
-
+		    slider_box_div.appendChild(slider_row);
+		    
 
    		}
+	    slider_box.append(slider_box_div);
 
 
 
