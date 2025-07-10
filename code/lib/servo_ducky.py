@@ -140,7 +140,14 @@ class servoducky():
             servo_id = servo
             servo_range = servo_data["actuation_range"]
             servo_angle = self.servos[str(servo_id)]["servo"].angle
-            servo_angle = 0
+
+            if not servo_angle:
+                servo_angle = "Err_none"
+
+            elif servo_angle < 0:
+                servo_angle = 0
+            elif servo_angle > servo_range:
+                servo_angle = "Err_read-error"
 
             servo_info.append([servo_id,servo_range,servo_angle])
 
@@ -152,9 +159,11 @@ class servoducky():
 
 
 
-    def read_script(self,script_name):
+    def read_script(self,script):
 
-        config = open(self.scripts[script_name],"r").read()
+
+
+        config = script
 
         sections = { }
 
@@ -199,9 +208,20 @@ class servoducky():
             print("script not found")
             return
 
-        script = self.read_script(script_name)
+        script_contents = open(self.scripts[script_name],"r").read()
+        script = self.read_script(script_contents)
 
         function_name = "main"
+        await self._execute_function(script,function_name)
+
+    async def run_tmp_script(self,tmp_script):
+
+        script_name = tmp_script
+        function_name = "main"
+
+        script = self.read_script(script_name)
+
+
         await self._execute_function(script,function_name)
 
 
@@ -395,9 +415,20 @@ if __name__ == "__main__":
     async def main():
 
 
-        s._list_servos()
-        #await s.run_script("es1")
-        #await s.execute_command("S0 10")
+        #import circuitpython_base64 as base64
+
+
+
+        #script_base64 = "W21haW5dClMwIDAKREVMQVkgMTUwICMgaGVsbG8gdGhlcmUKUzAgMTgwICAzMDAK"
+
+
+        #script_decoded = base64.decodebytes(script_base64.encode()).decode()
+        #asyncio.run(s.run_tmp_script(script_decoded))
+
+
+        #print(s._list_servos())
+        await s.run_script("es1")
+
         #await s.execute_command("DELAY 100 ")
         #await s.execute_command("S0 180 2000")
 

@@ -10,6 +10,14 @@ from servo_ducky import servoducky
 import asyncio
 from adafruit_pca9685 import PCA9685
 
+import circuitpython_base64 as base64
+
+# https://github.com/jimbobbennett/CircuitPython_Base64
+
+
+
+
+
 
 import supervisor
 supervisor.runtime.autoreload = False
@@ -70,8 +78,7 @@ while True:
 
         #serial_command = serial_command.upper()
 
-        print("....")
-        print(serial_command.upper())
+
 
         if serial_command.upper().startswith("R"):
             script_name = serial_command.split()[1]
@@ -85,6 +92,25 @@ while True:
         elif "LIST_SERVOS" in serial_command.upper():
             servo_info = s._list_servos()
             uart.write(json.dumps(servo_info))
+
+        elif serial_command.upper().startswith("LOAD"):
+
+
+            script_base64 = serial_command.split("|")[1]
+
+
+            script_decoded = base64.decodebytes(script_base64.encode()).decode()
+
+
+
+            print("LOADING SCRIPT OVER UART")
+
+
+            asyncio.run(s.run_tmp_script(script_decoded))
+
+
+        elif serial_command.upper().startswith("SAVE_SCRIPT"):
+            print(serial_command)
 
         else:
 

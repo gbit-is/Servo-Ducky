@@ -137,6 +137,13 @@
 	    script_content = document.getElementById("scode_box").value
 
 
+	    let script_b64 = btoa(script_content);
+	    let command = "LOAD|" + script_b64;
+	    console.log(script_b64)
+	    sendToSerial(command)
+
+
+
 
     }
 
@@ -251,8 +258,8 @@
 
     }
 
-    let servo_data_raw = '[[0, 180, 91.8033], [1, 180, 47.7377], [2, 180, 126.776], [3, 180, 54.7322], [4, 180, "Err_none"], [5, 180, "Err_none"], [6, 180, "Err_none"], [7, 180, "Err_none"], [8, 180, "Err_none"], [9, 180, "Err_none"], [10, 180, "Err_none"], [11, 180, "Err_none"], [12, 180, "Err_none"], [13, 180, "Err_none"], [14, 180, "Err_none"], [15, 180, "Err_none"], "DONE"]'
-    generate_sliders(servo_data_raw);
+    //let servo_data_raw = '[[0, 180, 91.8033], [1, 180, 47.7377], [2, 180, 126.776], [3, 180, 54.7322], [4, 180, "Err_none"], [5, 180, "Err_none"], [6, 180, "Err_none"], [7, 180, "Err_none"], [8, 180, "Err_none"], [9, 180, "Err_none"], [10, 180, "Err_none"], [11, 180, "Err_none"], [12, 180, "Err_none"], [13, 180, "Err_none"], [14, 180, "Err_none"], [15, 180, "Err_none"], "DONE"]'
+    //generate_sliders(servo_data_raw);
 
 
     async function connectSerial() {
@@ -392,7 +399,7 @@ document.getElementById("open_script").addEventListener("click", function() {
 });
 
 
-      document.getElementById("run_script").addEventListener("click", execute_tmp_script);
+    document.getElementById("run_script").addEventListener("click", execute_tmp_script);
 
 
     const savedContents = getCookie("scode_contents");
