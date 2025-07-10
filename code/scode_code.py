@@ -75,6 +75,7 @@ while True:
 
         #print(str(serial_command) + "___")
         serial_command = serial_command.replace("@","")
+        serial_command = serial_command.strip()
 
         #serial_command = serial_command.upper()
 
@@ -84,33 +85,59 @@ while True:
             script_name = serial_command.split()[1]
             print("From Serial|Executing script: " + script_name)
 
+            print(script_name)
+
             asyncio.run(s.run_script(script_name))
 
         elif "WHOIS" in serial_command.upper():
             uart.write(WHOIS_ID)
 
         elif "LIST_SERVOS" in serial_command.upper():
+            print("list servos to uart")
             servo_info = s._list_servos()
+            servo_info.append("DONE")
             uart.write(json.dumps(servo_info))
 
         elif serial_command.upper().startswith("LOAD"):
 
 
             script_base64 = serial_command.split("|")[1]
-
-
             script_decoded = base64.decodebytes(script_base64.encode()).decode()
 
-
-
             print("LOADING SCRIPT OVER UART")
-
-
             asyncio.run(s.run_tmp_script(script_decoded))
 
 
-        elif serial_command.upper().startswith("SAVE_SCRIPT"):
-            print(serial_command)
+        elif serial_command.upper().startswith("LIST"):
+            print("Requesting list of scripts")
+
+            scripts = [ ]
+            for script in s.scripts:
+                scripts.append(script)
+
+            script.append("DONE")
+
+            uart.write(json.dumps(scripts))
+
+        elif "SDCC_INIT" in serial_command.upper():
+
+            ducky_info = [ ]
+
+            servo_info = s._list_servos()
+
+            ducky_info.append(servo_info)
+
+            scripts = [ ]
+            for script in s.scripts:
+                scripts.append(script)
+
+            ducky_info.append(scripts)
+            ducky_info.append("DONE")
+            print(ducky_info)
+            uart.write(json.dumps(ducky_info))
+
+
+
 
         else:
 

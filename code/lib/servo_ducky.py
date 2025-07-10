@@ -152,7 +152,7 @@ class servoducky():
             servo_info.append([servo_id,servo_range,servo_angle])
 
 
-        servo_info.append("DONE")
+        #servo_info.append("DONE")
 
         return servo_info
 
@@ -202,6 +202,7 @@ class servoducky():
 
 
 
+
     async def run_script(self,script_name):
 
         if script_name not in self.scripts:
@@ -233,8 +234,7 @@ class servoducky():
 
     async def execute_command(self,line,script="",params=[]):
 
-            print("......" + line)
-
+            print("Executing command: " + line)
             line_split = line.split()
 
             if line.startswith("_"):
@@ -427,8 +427,12 @@ if __name__ == "__main__":
 
 
         #print(s._list_servos())
-        await s.run_script("es1")
+        #await s.run_script("ES1")
 
+        script_name = "es1"
+
+        asyncio.run(s.run_script(script_name))
+        #print(s.scripts)
         #await s.execute_command("DELAY 100 ")
         #await s.execute_command("S0 180 2000")
 
