@@ -5,7 +5,7 @@
   <title>SDCC</title>
   <style>
     body { font-family: monospace; padding: 20px; }
-    #terminal { width: 100%; height: 25vh; background: #000; color: #0f0; padding: 10px; overflow-y: auto; white-space: pre-wrap; }
+    #terminal { width: 100%; height: 25vh; background: lightsteelblue; color: black; padding: 10px; overflow-y: auto; white-space: pre-wrap; }
     #input { width: 100%; }
     .slider_class {
 	    width: 50%;
@@ -27,13 +27,36 @@
   width: 100%;
   padding: 10px;
   height: 100%;
-  margin: -10px;
+  background-color: black;
+  color: greenyellow;
+}
+
+    * {
+  box-sizing: border-box;
+}
+
+    .column {
+  float: left;
+  width: 50%;
+}
+    /* Clear floats after the columns */
+.row:after {
+  content: "";
+  display: table;
+  clear: both;
 }
 
   </style>
 </head>
 <body>
-  <h1>Servo Ducky Command Center</h1>
+  <div class="row">
+	  <div class="column">
+  	<h2>Servo Ducky Command Center</h2>
+	</div>
+	  <div class="column">
+  	Servo Ducky Command Center
+	</div>
+  </div>
   <button id="connect">Connect</button>
   <div id="terminal"></div>
   <input id="input" type="text" placeholder="Type a command..." />
@@ -44,13 +67,19 @@
 
 	<div class="fixed">
   <div id="slider_container"></div>
-  <div id="play controls" style="position: absolute; 
-                    bottom: 5vh;
-		    " >
+  <div id="play controls" style="position: absolute; bottom: 5vh; " >
 
+	  Execute Servo Ducky Functions
+	<div id="function_container">
+	</div>
+	  <br>
+
+	  Manage Scripts
+	  <div>
 		      <button id="run_script">run script</button>
 		      <button id="open_script">open script</button>
 		      <button id="save_script">save script</button>
+		  </div>
 
   </div>
 
@@ -179,20 +208,24 @@
 
     }
 
-    function generate_sliders(servo_data_raw) {
+    function generate_sliders(servo_data) {
 
 
 
 	const slider_box = document.getElementById("slider_container");
 
 
-	    //console.log("generate sliders")
+	    console.log("generate sliders")
 
-	    var servo_data = JSON.parse(servo_data_raw);
+	    //var servo_data = JSON.parse(servo_data_raw);
 	    var br = document.createElement("br");
 
+	    console.log(servo_data)
+	    console.log("foo")
 
-	    for ( const servo in servo_data.slice(0,-1)) {
+	    for ( const servo in servo_data) { 
+
+		    console.log(servo);
 
 		    var slider_div = document.createElement("div");
 
@@ -258,6 +291,50 @@
 
     }
 
+    function click_run_function(event){
+	    let value = event.target.value;
+
+
+	    command = "R " + value
+
+
+	    sendToSerial(command)
+	   }
+
+    function generate_function_keys(function_list){
+
+	    console.log(function_list)
+
+	    const function_box = document.getElementById("function_container");
+
+	    for ( const function_nr in function_list ) {
+
+		    function_name = function_list[function_nr]
+
+
+		    let func_button = document.createElement("button");
+		    func_button.innerHTML = function_name ;
+		    func_button.id = "function" + function_name ;
+		    func_button.value = function_name ;
+		    func_button.classList.add("flex-item")
+
+		    func_button.addEventListener("click", function(event) {
+  			  click_run_function(event);
+		    });
+
+		    function_box.append(func_button)
+		    function_box.append(" ")
+
+
+		}
+
+
+	   }
+
+
+    let function_list = ['example_script_2', 'es1', 'example_script_1'];
+    generate_function_keys(function_list);
+
     //let servo_data_raw = '[[0, 180, 91.8033], [1, 180, 47.7377], [2, 180, 126.776], [3, 180, 54.7322], [4, 180, "Err_none"], [5, 180, "Err_none"], [6, 180, "Err_none"], [7, 180, "Err_none"], [8, 180, "Err_none"], [9, 180, "Err_none"], [10, 180, "Err_none"], [11, 180, "Err_none"], [12, 180, "Err_none"], [13, 180, "Err_none"], [14, 180, "Err_none"], [15, 180, "Err_none"], "DONE"]'
     //generate_sliders(servo_data_raw);
 
@@ -281,22 +358,21 @@
         const inputStream = decoder.readable;
         reader = inputStream.getReader();
 
-	sendToSerial("list_servos")
+	//sendToSerial("list_servos")
+	sendToSerial("_SDCC_INIT")
 
-
-	
-
-	let servo_data = "";
+	let init_data = "";
 
 	while (true) {
       	  const { value, done } = await reader.read();
-	  servo_data += value
+	  init_data += value
 	  //console.log(servo_data)
-	  if (servo_data.includes("DONE")) break;
+	  if (init_data.includes("DONE")) break;
 	}
 
-	//console.log(servo_data)
-	generate_sliders(servo_data)
+	var init_data_json = JSON.parse(init_data);
+	generate_sliders(init_data_json[0])
+	generate_function_keys(init_data_json[1])
 	
 
 
