@@ -238,7 +238,11 @@ function generate_sliders(servo_data) {
 }
 
 function click_run_function(event) {
+
+
     let value = event.target.value;
+    console.log(event.target);
+
 
 
     command = "R " + value
@@ -260,6 +264,7 @@ function generate_function_keys(function_list) {
         let func_button = document.createElement("button");
         let func_span = document.createElement("span")
         func_span.innerHTML = function_name;
+        func_span.value = function_name;
         //func_button.innerHTML = "<span> + function_name + "</span>" ;
         func_button.id = "function" + function_name;
         func_button.value = function_name;
