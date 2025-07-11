@@ -4,9 +4,45 @@
   <meta charset="UTF-8">
   <title>SDCC</title>
   <style>
-    body { font-family: monospace; padding: 20px;background-color:floralwhite; }
-    #terminal { width: 100%; height: 25vh; background: lightsteelblue; color: black; padding: 10px; overflow-y: auto; white-space: pre-wrap; }
-    #input { width: 100%; }
+    body { 
+	font-family: monospace; 
+	padding: 20px;
+	background-color:floralwhite; 
+    }
+
+     #terminal_container {
+  	height: 300px;
+  	min-height: 100px;
+  	max-height: 600px;
+  	width: 100%;
+  	display: flex;
+  	flex-direction: column;
+  	position: relative;
+  	border: 1px solid #ccc;
+  	overflow: hidden;
+     }
+
+
+    #terminal { 
+	width: 100%; 
+	height: 25vh; 
+	background: lightsteelblue; 
+	color: black; 
+	padding: 10px; 
+	overflow-y: auto; 
+	white-space: pre-wrap; 
+	flex: 1;
+    }
+    #resize_handle {
+  	height: 6px;
+  	background: #888;
+  	cursor: row-resize;
+  	user-select: none;
+	}
+
+    #input { 
+	width: 100%; 
+     }
     .slider_class {
 	    width: 100%;
 
@@ -42,6 +78,8 @@
   <div id="terminal_container">
   	<div id="terminal"></div>
   	<input id="input" type="text" placeholder="Type a command..." />
+  <div id="resize_handle"></div>
+
   </div>
   <br>
 
@@ -124,17 +162,13 @@
 
     function on_slider_change(event) {
 
-	    console.log("update slider ...")
 	    let value = event.target.value;
 	    let id = event.target.id
-	    //console.log("on slider change .... ");
-	    //console.log(value,id)
 
 	    numbox_id = "numbox" + id
 
 	    let number_box = document.getElementById(numbox_id);
 
-	    //console.log(number_box);
 	    number_box.innerHTML = value ;
 
 
@@ -151,7 +185,6 @@
 
 	    let script_b64 = btoa(script_content);
 	    let command = "LOAD|" + script_b64;
-	    console.log(script_b64)
 	    sendToSerial(command)
 
 
@@ -164,7 +197,6 @@
 	console.log("saving scode to cookie")
 	let contents = document.getElementById("scode_box").value
 
-	console.log(contents)
 	document.cookie = "scode_contents=" + encodeURIComponent(contents)
 
 
@@ -227,13 +259,10 @@
 	const slider_box = document.getElementById("slider_container");
 
 
-	    console.log("generate sliders")
 
 	    //var servo_data = JSON.parse(servo_data_raw);
 	    var br = document.createElement("br");
 
-	    console.log(servo_data)
-	    console.log("foo")
 
 	    const slider_box_div = document.createElement("div");
 	    slider_box_div.style.width = "100%";
@@ -241,7 +270,6 @@
 
 	    for ( const servo in servo_data) { 
 
-		    console.log(servo);
 
 		    var slider_row = document.createElement("div");
 
@@ -262,10 +290,7 @@
 		    }
 
 
-		    console.log(servo_angle_text)
 		    servo_angle_text = pad(10,servo_angle_text," ")
-		    console.log(servo_angle_text)
-		    console.log("...")
 
 
 		    var slider_div = document.createElement("div");
@@ -348,7 +373,6 @@
 
     function generate_function_keys(function_list){
 
-	    console.log(function_list)
 
 	    const function_box = document.getElementById("function_container");
 
@@ -383,10 +407,10 @@
     //let servo_data_raw = '[[0, 180, 91.8033], [1, 180, 47.7377], [2, 180, 126.776], [3, 180, 54.7322], [4, 180, "Err_none"], [5, 180, "Err_none"], [6, 180, "Err_none"], [7, 180, "Err_none"], [8, 180, "Err_none"], [9, 180, "Err_none"], [10, 180, "Err_none"], [11, 180, "Err_none"], [12, 180, "Err_none"], [13, 180, "Err_none"], [14, 180, "Err_none"], [15, 180, "Err_none"], "DONE"]'
 
 
-	//let init_data = '[[[0, 180, "50"], [1, 180, "30"], [2, 180, "10"], [3, 180, "Err_none"], [4, 180, "Err_none"], [5, 180, "Err_none"], [6, 180, "Err_none"], [7, 180, "Err_none"], [8, 180, "Err_none"], [9, 180, "Err_none"], [10, 180, "Err_none"], [11, 180, "Err_none"], [12, 180, "Err_none"], [13, 180, "Err_none"], [14, 180, "Err_none"], [15, 180, "Err_none"]], ["example_script_2", "nyja_skriftan_min", "es1", "example_script_1"], "DONE"]'
+	let init_data = '[[[0, 180, "50"], [1, 180, "30"], [2, 180, "10"], [3, 180, "Err_none"], [4, 180, "Err_none"], [5, 180, "Err_none"], [6, 180, "Err_none"], [7, 180, "Err_none"], [8, 180, "Err_none"], [9, 180, "Err_none"], [10, 180, "Err_none"], [11, 180, "Err_none"], [12, 180, "Err_none"], [13, 180, "Err_none"], [14, 180, "Err_none"], [15, 180, "Err_none"]], ["example_script_2", "nyja_skriftan_min", "es1", "example_script_1"], "DONE"]'
 
-	//var init_data_json = JSON.parse(init_data);
-	//generate_sliders(init_data_json[0])
+	var init_data_json = JSON.parse(init_data);
+	generate_sliders(init_data_json[0])
 
     //generate_sliders(servo_data_raw);
 
@@ -395,7 +419,6 @@
       try {
 	port = await navigator.serial.requestPort({ filters } );
 	const info = port.getInfo();
-	//console.log(info)
         await port.open({ baudRate: 9600 });
 
         logToTerminal("✅ Connected\n");
@@ -418,10 +441,8 @@
 	while (true) {
       	  const { value, done } = await reader.read();
 	  init_data += value
-	  //console.log(servo_data)
 	  if (init_data.includes("DONE")) break;
 	}
-	//console.log(init_data)
 
 	var init_data_json = JSON.parse(init_data);
 	generate_sliders(init_data_json[0])
@@ -547,6 +568,42 @@ document.getElementById("open_script").addEventListener("click", function() {
     document.getElementById("scode_box").addEventListener("input", save_scode_to_cookie);
 
 
+const container = document.getElementById("terminal_container");
+const handle = document.getElementById("resize_handle");
+
+let isResizing = false;
+let startY, startHeight;
+
+handle.addEventListener("mousedown", function (e) {
+  isResizing = true;
+  startY = e.clientY;
+  startHeight = container.offsetHeight;
+  document.body.style.cursor = "row-resize";
+  document.body.style.userSelect = "none";
+});
+
+document.addEventListener("mousemove", function (e) {
+  if (!isResizing) return;
+  const dy = e.clientY - startY;
+  container.style.height = `${startHeight + dy}px`;
+});
+
+document.addEventListener("mouseup", function () {
+  if (isResizing) {
+    isResizing = false;
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+    localStorage.setItem("terminal_height", container.offsetHeight);
+  }
+});
+
+// Apply saved height on load
+window.addEventListener("DOMContentLoaded", () => {
+  const savedHeight = localStorage.getItem("terminal_height");
+  if (savedHeight) {
+    container.style.height = `${savedHeight}px`;
+  }
+});
 
   </script>
 </body>
