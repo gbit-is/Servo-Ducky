@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>SDCC</title>
+
+
   <style>
     html,body { 
 	font-family: monospace; 
@@ -12,6 +14,52 @@
 	overflow: hidden;
 	background-color:floralwhite; 
     }
+
+
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  border-radius: 4px;
+  border: none;
+  color: #FFFFFF;
+  text-align: center;
+  font-size: 1.2em;
+  transition: all 0.5s;
+  padding: 0px 5px;
+  width: auto;
+  max-width: max-content;
+  cursor: pointer;
+}
+
+.button span {
+  cursor: pointer;
+  display: inline-block;
+  position: relative;
+  transition: 0.5s;
+}
+
+.button span:after {
+  content: '\00bb';
+  position: absolute;
+  opacity: 0;
+  top: 0;
+  right: -20px;
+  transition: 0.5s;
+}
+
+.button:hover span {
+  padding-right: 25px;
+}
+
+.button:hover span:after {
+  opacity: 1;
+  right: 0;
+}
+
+
 
      #terminal_container {
   	height: 300px;
@@ -30,10 +78,6 @@
   	height: 100vh; /* Fill the viewport */
 	}
 
-    #connect {
-	width: 10%;
-
-    }
 
      #main_container {
   	flex: 1; 
@@ -89,10 +133,15 @@
 </head>
 <body>
   <div id="app">
+	<div id="logo_header">
+		<center>
+		<br>
 		  <img src="https://raw.githubusercontent.com/gbit-is/Servo-Ducky/refs/heads/main/images/servo_ducky_cc_banner.svg" alt="servo_ducky_logo" style="height:2vh;">
+		</center>
+	</div>
 		  <br>
 
-  <button id="connect">Connect</button>
+  <button id="connect" class="button" style="background-color:green"><span>Connect to Servo-Ducky</span></button>
   <div id="terminal_container">
   	<div id="terminal"></div>
   	<input id="input" type="text" placeholder="Type a command..." />
@@ -115,9 +164,10 @@
 
 	  Manage Scripts
 	  <div>
-		      <button id="run_script">run script</button>
-		      <button id="open_script">open script</button>
-		      <button id="save_script">save script</button>
+		
+		      <button id="run_script"  class="button" style="background-color:lawngreen;color:darkslategray"><span>run script</span></button>
+		      <button id="open_script" class="button" style="background-color:lightgray;color:darkslategray"><span>open script</span></button>
+		      <button id="save_script" class="button" style="background-color:lightslategray;color:darkslategray"><span>save script</span></button>
 		  </div>
 
   </div>
@@ -400,15 +450,20 @@
 
 
 		    let func_button = document.createElement("button");
-		    func_button.innerHTML = function_name ;
+		    let func_span = document.createElement("span")
+                    func_span.innerHTML = function_name;
+		    //func_button.innerHTML = "<span> + function_name + "</span>" ;
 		    func_button.id = "function" + function_name ;
 		    func_button.value = function_name ;
+		    func_button.style.backgroundColor = "blue";
 		    func_button.classList.add("flex-item")
+		    func_button.classList.add("button")
 
 		    func_button.addEventListener("click", function(event) {
   			  click_run_function(event);
 		    });
 
+		    func_button.append(func_span)
 		    function_box.append(func_button)
 		    function_box.append(" ")
 
@@ -429,6 +484,7 @@
 
 	var init_data_json = JSON.parse(init_data);
 	generate_sliders(init_data_json[0])
+	generate_function_keys(init_data_json[1])
 
     //generate_sliders(servo_data_raw);
 
