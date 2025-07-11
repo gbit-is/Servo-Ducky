@@ -5,6 +5,8 @@ let writer;
 const terminal = document.getElementById('terminal');
 const input = document.getElementById('input');
 const connectButton = document.getElementById('connect');
+const disconnectButton = document.getElementById('disconnect');
+
 
 
 
@@ -286,44 +288,83 @@ function generate_function_keys(function_list) {
 
 }
 
+function disconnectSerial() {
+    if (reader) reader.cancel();
+    if (writer) writer.releaseLock();
+    if (port) port.close();
+    localStorage.removeItem("serial_auto_reconnect");
+    logToTerminal("🔌 Disconnected\n");
+}
+
+async function connectSerial(autoReconnect = false) {
 
 
-async function connectSerial() {
+
+    console.log("connect serial ...")
     try {
-        port = await navigator.serial.requestPort({ filters });
+        // Step 1: Get or request port
+        if (autoReconnect) {
+            const ports = await navigator.serial.getPorts();
+            const savedIndex = parseInt(localStorage.getItem("serial_port_index"));
+
+            if (!isNaN(savedIndex) && ports[savedIndex]) {
+                port = ports[savedIndex];
+                logToTerminal(`🔁 Auto-reconnecting to port [${savedIndex}]...\n`);
+            } else {
+                logToTerminal("⚠️ No valid stored port index found or port not available.\n");
+                return;
+            }
+
+
+        } else {
+            port = await navigator.serial.requestPort({ filters });
+            const allPorts = await navigator.serial.getPorts();
+            const portIndex = allPorts.findIndex(p => p === port);
+            localStorage.setItem("serial_auto_reconnect", "true");
+            localStorage.setItem("serial_port_index", portIndex);
+
+        }
+
+        
+
+        console.log("open port")
+        // Step 2: Open the port
         const info = port.getInfo();
         await port.open({ baudRate: 9600 });
 
         logToTerminal("✅ Connected\n");
 
-
-        // Setup writer
+        // Step 3: Setup writer
         writer = port.writable.getWriter();
 
-        // Setup reader
+        console.log("setup reader")
+        // Step 4: Setup reader
         const decoder = new TextDecoderStream();
         const inputDone = port.readable.pipeTo(decoder.writable);
         const inputStream = decoder.readable;
         reader = inputStream.getReader();
 
-        //sendToSerial("list_servos")
-        sendToSerial("_SDCC_INIT")
-
+        console.log("send serial")
+        // Step 5: Initialize device
+        sendToSerial("_SDCC_INIT");
         let init_data = "";
 
+        console.log("start read")
         while (true) {
+            console.log(init_data)
             const { value, done } = await reader.read();
-            init_data += value
+            if (done) break;
+            init_data += value;
             if (init_data.includes("DONE")) break;
         }
 
-        var init_data_json = JSON.parse(init_data);
-        generate_sliders(init_data_json[0])
-        generate_function_keys(init_data_json[1])
+        console.log(init_data)
 
+        const init_data_json = JSON.parse(init_data);
+        generate_sliders(init_data_json[0]);
+        generate_function_keys(init_data_json[1]);
 
-
-        // Read loop
+        // Step 6: Start read loop
         while (true) {
             const { value, done } = await reader.read();
             if (done) break;
@@ -331,7 +372,8 @@ async function connectSerial() {
         }
 
     } catch (err) {
-        logToTerminal("❌ Error: " + err.message + "\n");
+        logToTerminal("❌ Connection error: " + err.message + "\n");
+        localStorage.removeItem("serial_auto_reconnect");
     }
 }
 
@@ -345,7 +387,15 @@ async function sendToSerial(data) {
     logToTerminal("> " + data + "\n");
 }
 
-connectButton.addEventListener('click', connectSerial);
+//connectButton.addEventListener('click', connectSerial(false));
+
+connectButton.addEventListener("click", () => {
+    connectSerial(false); // Prompt user to select port
+});
+
+disconnectButton.addEventListener("click", () => {
+    disconnectSerial(); // Prompt user to select port
+});
 
 input.addEventListener('keydown', async (e) => {
     if (e.key === 'Enter') {
@@ -475,6 +525,12 @@ window.addEventListener("DOMContentLoaded", () => {
     const savedHeight = localStorage.getItem("terminal_height");
     if (savedHeight) {
         container.style.height = `${savedHeight}px`;
+    }
+});
+
+window.addEventListener("DOMContentLoaded", () => {
+    if (localStorage.getItem("serial_auto_reconnect") === "true") {
+        connectSerial(true); // Try to auto-reconnect
     }
 });
 
