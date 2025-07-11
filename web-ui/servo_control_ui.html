@@ -39,8 +39,10 @@
 		  <br>
 
   <button id="connect">Connect</button>
-  <div id="terminal"></div>
-  <input id="input" type="text" placeholder="Type a command..." />
+  <div id="terminal_container">
+  	<div id="terminal"></div>
+  	<input id="input" type="text" placeholder="Type a command..." />
+  </div>
   <br>
 
 <div class="container">
@@ -169,13 +171,38 @@
 	   }
 
     function add_to_textbox(line) {
-	//console.log(line)
-	document.getElementById("scode_box").value += line + "\n";
+    const textbox = document.getElementById("scode_box");
 
-	save_scode_to_cookie()
+    // Get the current cursor position
+    const start = textbox.selectionStart;
+    const end = textbox.selectionEnd;
+    const text = textbox.value;
 
+    // Check if we're in the middle of a non-empty line
+    const before = text.substring(0, start);
+    const after = text.substring(end);
+    const lastNewline = before.lastIndexOf("\n");
+    const nextNewline = after.indexOf("\n");
+    const lineStart = lastNewline === -1 ? 0 : lastNewline + 1;
+    const lineEnd = nextNewline === -1 ? text.length : end + nextNewline;
 
-    }
+    const currentLine = text.substring(lineStart, lineEnd).trim();
+    const insertNewline = currentLine.length > 0;
+
+    // Compose new value
+    const insertText = (insertNewline ? "\n" : "") + line + "\n";
+    textbox.value = before + insertText + after;
+
+    // Set cursor after the inserted text
+    const newCursorPos = start + insertText.length;
+    textbox.selectionStart = textbox.selectionEnd = newCursorPos;
+
+    // Optional: Keep focus on textbox
+    textbox.focus();
+
+	    save_scode_to_cookie()
+	}
+
 
     function click_add(event) {
 	    let servo_id = event.target.value;
@@ -354,6 +381,13 @@
     //generate_function_keys(function_list);
 
     //let servo_data_raw = '[[0, 180, 91.8033], [1, 180, 47.7377], [2, 180, 126.776], [3, 180, 54.7322], [4, 180, "Err_none"], [5, 180, "Err_none"], [6, 180, "Err_none"], [7, 180, "Err_none"], [8, 180, "Err_none"], [9, 180, "Err_none"], [10, 180, "Err_none"], [11, 180, "Err_none"], [12, 180, "Err_none"], [13, 180, "Err_none"], [14, 180, "Err_none"], [15, 180, "Err_none"], "DONE"]'
+
+
+	//let init_data = '[[[0, 180, "50"], [1, 180, "30"], [2, 180, "10"], [3, 180, "Err_none"], [4, 180, "Err_none"], [5, 180, "Err_none"], [6, 180, "Err_none"], [7, 180, "Err_none"], [8, 180, "Err_none"], [9, 180, "Err_none"], [10, 180, "Err_none"], [11, 180, "Err_none"], [12, 180, "Err_none"], [13, 180, "Err_none"], [14, 180, "Err_none"], [15, 180, "Err_none"]], ["example_script_2", "nyja_skriftan_min", "es1", "example_script_1"], "DONE"]'
+
+	//var init_data_json = JSON.parse(init_data);
+	//generate_sliders(init_data_json[0])
+
     //generate_sliders(servo_data_raw);
 
 
@@ -387,6 +421,7 @@
 	  //console.log(servo_data)
 	  if (init_data.includes("DONE")) break;
 	}
+	//console.log(init_data)
 
 	var init_data_json = JSON.parse(init_data);
 	generate_sliders(init_data_json[0])
