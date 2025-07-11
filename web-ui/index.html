@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>SDCC</title>
+  <link rel="stylesheet" href="/css/sdcc.css">
+</head>
+
+<body>
+  <div id="app">
+    <div id="logo_header">
+      <center>
+        <br>
+        <img
+          src="https://raw.githubusercontent.com/gbit-is/Servo-Ducky/refs/heads/main/images/servo_ducky_cc_banner.svg"
+          alt="servo_ducky_logo" style="height:2vh;">
+      </center>
+    </div>
+    <br>
+
+    <button id="connect" class="button" style="background-color:green"><span>Connect to Servo-Ducky</span></button>
+    <div id="terminal_container">
+      <div id="terminal"></div>
+      <input id="input" type="text" placeholder="Type a command..." />
+      <div id="resize_handle"></div>
+
+    </div>
+    <br>
+
+    <div class="container" id="main_container">
+      <!-- <div class="fixed" id="slider_container"></div> -->
+
+      <div class="fixed">
+        <div id="slider_container"></div>
+        <div id="play controls" style="position: absolute; bottom: 5vh; ">
+
+          Execute Servo Ducky Functions
+          <div id="function_container">
+          </div>
+          <br>
+
+          Manage Scripts
+          <div>
+
+            <button id="run_script" class="button" style="background-color:lawngreen;color:darkslategray"><span>run
+                script</span></button>
+            <button id="open_script" class="button" style="background-color:lightgray;color:darkslategray"><span>open
+                script</span></button>
+            <button id="save_script" class="button"
+              style="background-color:lightslategray;color:darkslategray"><span>save script</span></button>
+          </div>
+
+        </div>
+
+
+      </div>
+
+
+      <div class="flex-item">
+
+        <!-- <textarea id="scode" name="scode" rows="20" cols="50">  </textarea> -->
+
+
+        <textarea class="scode" id="scode_box"></textarea>
+
+        <br>
+
+      </div>
+    </div>
+
+
+
+  </div>
+
+  <script src="/js/sdcc.js"></script>
+  <script>
+
+    let init_data = '[[[0, 180, "50"], [1, 180, "30"], [2, 180, "10"], [3, 180, "Err_none"], [4, 180, "Err_none"], [5, 180, "Err_none"], [6, 180, "Err_none"], [7, 180, "Err_none"], [8, 180, "Err_none"], [9, 180, "Err_none"], [10, 180, "Err_none"], [11, 180, "Err_none"], [12, 180, "Err_none"], [13, 180, "Err_none"], [14, 180, "Err_none"], [15, 180, "Err_none"]], ["example_script_2", "nyja_skriftan_min", "es1", "example_script_1"], "DONE"]'
+
+    var init_data_json = JSON.parse(init_data);
+    generate_sliders(init_data_json[0])
+    generate_function_keys(init_data_json[1])
+
+  </script>
+
+
+
+</body>
+
+</html>
