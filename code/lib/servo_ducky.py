@@ -237,14 +237,25 @@ class servoducky():
             print("Executing command: " + line)
             line_split = line.split()
 
-            if line.startswith("_"):
 
-                var_string = line.split()[0]
-                var_id = int(var_string.replace("_",""))
-                var_value = params[var_id]
 
-                line = line.replace(var_string,var_value)
+            if "_" in line:
 
+                line_parts = [ ]
+
+                for entry in line_split:
+                    if entry.startswith("_"):
+
+                        var_id = int(entry.replace("_",""))
+                        var_value = params[var_id]
+
+                        line_parts.append(var_value)
+
+                    else:
+                        line_parts.append(entry)
+
+                line = " ".join(line_parts)
+                #line = line.replace(var_string,var_value)
 
 
             if line.startswith("S"):
@@ -349,7 +360,7 @@ class servoducky():
                     print(delta_step_time_s)
 
 
-            elif line.startswith("DELAY"):
+            elif line.upper().startswith("DELAY"):
 
 
                 if len(line_split) < 2:
@@ -429,7 +440,7 @@ if __name__ == "__main__":
         #print(s._list_servos())
         #await s.run_script("ES1")
 
-        script_name = "es1"
+        script_name = "func_debug"
 
         asyncio.run(s.run_script(script_name))
         #print(s.scripts)
