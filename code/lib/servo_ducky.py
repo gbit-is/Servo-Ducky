@@ -36,6 +36,8 @@ class servoducky():
     CLASS_DEFAULTS["servo_configs"] = { }
     CLASS_DEFAULTS["number_of_servos"] = 16
     CLASS_DEFAULTS["neopixel_pin"] = board.GP16
+    CLASS_DEFAULTS["debug_uart"] = False
+
 
 
 
@@ -56,6 +58,8 @@ class servoducky():
 
         self.class_args = kwargs
 
+
+
         for param in self.CLASS_DEFAULTS:
             if param not in self.class_args:
                 self.class_args[param] = self.CLASS_DEFAULTS[param]
@@ -66,9 +70,9 @@ class servoducky():
         try:
             os.stat(script_dir)
         except Exception as e:
-            print("Unable to find script dir")
-            print("Exception is:")
-            print(e)
+            self.debug("Unable to find script dir")
+            self.debug("Exception is:")
+            self.debug(e)
             raise Exception()
 
         if not script_dir.endswith("/"):
@@ -82,6 +86,17 @@ class servoducky():
         if self.NEOPIXEL_LIB:
             self.status_led =  neopixel.NeoPixel(self.class_args["neopixel_pin"], 1, brightness=0.5, auto_write=True)
             self.set_status_led("green")
+
+    def debug(self,message):
+
+        if self.class_args["debug_uart"]:
+            if "uart" in self.class_args:
+                try:
+                    self.class_args["uart"].write("DEBUG: " + str(message) + "\n" )
+                except Exception as e:
+                    print("Unable to print to UART. Error is:\n" + str(e))
+        print(message)
+
 
     def set_status_led(self,color):
 
@@ -206,7 +221,7 @@ class servoducky():
     async def run_script(self,script_name):
 
         if script_name not in self.scripts:
-            print("script not found")
+            self.debug("script not found")
             return
 
         script_contents = open(self.scripts[script_name],"r").read()
@@ -234,7 +249,7 @@ class servoducky():
 
     async def execute_command(self,line,script="",params=[]):
 
-            print("Executing command: " + line)
+            self.debug("Executing command: " + line)
             line_split = line.split()
 
 
@@ -275,14 +290,14 @@ class servoducky():
 
 
                 if servo_id not in self.servos:
-                    print("Invalid servo: " + servo_id)
+                    self.debug("Invalid servo: " + servo_id)
                     return
 
 
                 try:
                     servo_angle = int(line_split[1])
                 except:
-                    print(line_split[1] + " is not an interger")
+                    self.debug(line_split[1] + " is not an interger")
                     return
 
 
@@ -291,15 +306,15 @@ class servoducky():
 
                 actuation_range = self.servos[servo_id]["servo"].actuation_range
                 if servo_angle > actuation_range:
-                    print("WARNING: ")
-                    print('LINE: "' + line + '" is invalid')
-                    print("movement is defined at: " + str(servo_angle) + "° but the max range is: " + str(actuation_range) +"°")
-                    print("reducing angle to: " + str(actuation_range))
+                    self.debug("WARNING: ")
+                    self.debug('LINE: "' + line + '" is invalid')
+                    self.debug("movement is defined at: " + str(servo_angle) + "° but the max range is: " + str(actuation_range) +"°")
+                    self.debug("reducing angle to: " + str(actuation_range))
                     servo_angle = actuation_range
 
 
                 if len(line_split) == 2:
-                    print("setting servo: " + servo_id + " to angle " + str(servo_angle))
+                    self.debug("setting servo: " + servo_id + " to angle " + str(servo_angle))
                     self.servos[servo_id]["servo"].angle = servo_angle
                 else:
 
@@ -327,7 +342,7 @@ class servoducky():
 
                     delay_time = (servo_time / pos_diff) / 100
 
-                    print("setting servo: " + servo_id + " from angle " + str(current_pos) + " to angle " + str(servo_angle) + " in: " + str(servo_time) + " ms")
+                    self.debug("setting servo: " + servo_id + " from angle " + str(current_pos) + " to angle " + str(servo_angle) + " in: " + str(servo_time) + " ms")
 
                     step_val = 1
                     if servo_angle < current_pos:
@@ -342,12 +357,12 @@ class servoducky():
 
                     for step in range(current_pos,servo_angle,step_val):
                         invalid_step = False
-                        print("Stepping servo: " + servo_id + " to " + str(step) )
+                        self.debug("Stepping servo: " + servo_id + " to " + str(step) )
                         self.servos[servo_id]["servo"].angle = step
                         await asyncio.sleep(delay_time)
 
                     if invalid_step:
-                        print("else break")
+                        self.debug("else break")
                         self.servos[servo_id]["servo"].angle = servo_angle
 
 
@@ -356,15 +371,15 @@ class servoducky():
 
                     delta_step_time_ms = stop_step_time_ms - start_step_time_ms
                     delta_step_time_s = stop_step_time_s - start_step_time_s
-                    print(delta_step_time_ms)
-                    print(delta_step_time_s)
+                    #print(delta_step_time_ms)
+                    #print(delta_step_time_s)
 
 
             elif line.upper().startswith("DELAY"):
 
 
                 if len(line_split) < 2:
-                    print("No delay time specified in line: " + line)
+                    self.debug("No delay time specified in line: " + line)
                     delay_time = 100
                 else:
                     delay_time = line_split[1]
@@ -373,7 +388,7 @@ class servoducky():
 
                 delay_time = delay_time / 100
 
-                print("sleeping for: " + str(delay_time))
+                self.debug("sleeping for: " + str(delay_time))
 
                 await asyncio.sleep(delay_time)
 
@@ -383,12 +398,11 @@ class servoducky():
                 routine = params[0]
                 params.pop(0)
 
-                print("executing function: " + routine + " with params: " + str(params))
+                self.debug("executing function: " + routine + " with params: " + str(params))
                 await self._execute_function(script,routine,params)
 
             elif line.startswith("G"):
 
-                print(line)
                 params = line.split()
                 params.pop(0)
                 if params[0].startswith("S"):
@@ -442,7 +456,7 @@ if __name__ == "__main__":
 
         script_name = "func_debug"
 
-        asyncio.run(s.run_script(script_name))
+        #asyncio.run(s.run_script(script_name))
         #print(s.scripts)
         #await s.execute_command("DELAY 100 ")
         #await s.execute_command("S0 180 2000")
