@@ -25,6 +25,7 @@ if [[ "$arg" == "to_pico" ]];then
 elif [[ "$arg" == "to_git" ]];then
 	cp $CPI_DIR_CODE/s*py $GIT_DIR_CODE
 	cp $CPI_DIR_CODE/boot.py $GIT_DIR_CODE
+	cp $CPI_DIR_CODE/code.py $GIT_DIR_CODE
 	cp $CPI_DIR_CODE/s*toml $GIT_DIR_CODE
 	cp $CPI_DIR_SCRIPTS/*scode $GIT_DIR_SCRIPTS
 	cp $CPI_DIR_LIB/s*py $GIT_DIR_LIB
