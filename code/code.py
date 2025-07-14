@@ -133,6 +133,10 @@ while True:
                 scripts.append(script)
 
             ducky_info.append(scripts)
+
+            debug_info = { "debug" : s.class_args["debug_uart"] }
+
+            ducky_info.append(debug_info)
             ducky_info.append("DONE")
             print(ducky_info)
             uart.write(json.dumps(ducky_info))
@@ -142,6 +146,8 @@ while True:
                 s.class_args["debug_uart"] = True
             elif "DISABLE" in serial_command.upper():
                 s.class_args["debug_uart"] = False
+            elif "CHECK" in serial_command.upper():
+                uart.write(str(s.class_args["debug_uart"]))
 
 
 
