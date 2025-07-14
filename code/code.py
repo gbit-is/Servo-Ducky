@@ -3,6 +3,7 @@ import busio
 import time
 import os
 import json
+import digitalio
 
 import usb_cdc
 
@@ -26,8 +27,32 @@ supervisor.runtime.autoreload = False
 WHOIS_ID = "servo_ducky_v0"
 
 
-SCL_PIN = board.GP1
-SDA_PIN = board.GP0
+SCL_PIN = board.GP27
+SDA_PIN = board.GP26
+OE_PIN = board.GP28
+
+POWER_PINS = { }
+
+POWER_PINS["GND"] = { }
+POWER_PINS["GND"]["BOARD"] = board.GP29
+POWER_PINS["GND"]["ENABLED"] = True
+POWER_PINS["GND"]["VALUE"] = False
+
+POWER_PINS["VCC"] = { }
+POWER_PINS["VCC"]["BOARD"] = board.GP15
+POWER_PINS["VCC"]["ENABLED"] = True
+POWER_PINS["VCC"]["VALUE"] = True
+
+for POWER_PIN in POWER_PINS:
+    if POWER_PINS[POWER_PIN]["ENABLED"]:
+        POWER_PINS[POWER_PIN]["DIO"] = digitalio.DigitalInOut(POWER_PINS[POWER_PIN]["BOARD"])
+        POWER_PINS[POWER_PIN]["DIO"].direction = digitalio.Direction.OUTPUT
+        POWER_PINS[POWER_PIN]["DIO"].value = POWER_PINS[POWER_PIN]["VALUE"]
+
+
+
+
+
 PCA_FREQ = 60
 PCA_DUTY_CYCLE = 0x7FFF
 NUMBER_OF_SERVOS = 4
