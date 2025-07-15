@@ -247,9 +247,12 @@ class servoducky():
         for line in function:
             await self.execute_command(line,script,params)
 
+
+
     async def execute_command(self,line,script="",params=[]):
 
-            self.debug("Executing command: " + line)
+
+            self.debug("Executing command: " + str(line))
             line_split = line.split()
 
 
@@ -371,8 +374,7 @@ class servoducky():
 
                     delta_step_time_ms = stop_step_time_ms - start_step_time_ms
                     delta_step_time_s = stop_step_time_s - start_step_time_s
-                    #print(delta_step_time_ms)
-                    #print(delta_step_time_s)
+
 
 
             elif line.upper().startswith("DELAY"):
@@ -390,7 +392,10 @@ class servoducky():
 
                 self.debug("sleeping for: " + str(delay_time))
 
+
+                print("doing sleep")
                 await asyncio.sleep(delay_time)
+                print("sleep done")
 
             elif line.startswith("R"):
                 params = line.split()
@@ -418,8 +423,31 @@ class servoducky():
 if __name__ == "__main__":
 
     import busio
-    SCL_PIN = board.GP1
-    SDA_PIN = board.GP0
+    import digitalio
+    SCL_PIN = board.GP27
+    SDA_PIN = board.GP26
+    OE_PIN = board.GP28
+
+    POWER_PINS = { }
+
+    POWER_PINS["GND"] = { }
+    POWER_PINS["GND"]["BOARD"] = board.GP29
+    POWER_PINS["GND"]["ENABLED"] = True
+    POWER_PINS["GND"]["VALUE"] = False
+
+    POWER_PINS["VCC"] = { }
+    POWER_PINS["VCC"]["BOARD"] = board.GP15
+    POWER_PINS["VCC"]["ENABLED"] = True
+    POWER_PINS["VCC"]["VALUE"] = True
+
+    for POWER_PIN in POWER_PINS:
+        if POWER_PINS[POWER_PIN]["ENABLED"]:
+            POWER_PINS[POWER_PIN]["DIO"] = digitalio.DigitalInOut(POWER_PINS[POWER_PIN]["BOARD"])
+            POWER_PINS[POWER_PIN]["DIO"].direction = digitalio.Direction.OUTPUT
+            POWER_PINS[POWER_PIN]["DIO"].value = POWER_PINS[POWER_PIN]["VALUE"]
+
+
+
     PCA_FREQ = 60
     PCA_DUTY_CYCLE = 0x7FFF
     NUMBER_OF_SERVOS = 4
@@ -429,7 +457,6 @@ if __name__ == "__main__":
     pca = PCA9685(i2c)
     pca.frequency = PCA_FREQ
     pca.channels[0].duty_cycle = PCA_DUTY_CYCLE
-
 
     s = servoducky(pca=pca)
 
@@ -458,8 +485,9 @@ if __name__ == "__main__":
 
         #asyncio.run(s.run_script(script_name))
         #print(s.scripts)
-        #await s.execute_command("DELAY 100 ")
-        #await s.execute_command("S0 180 2000")
+        await s.execute_command("S0 0")
+        await s.execute_command("DELAY 100")
+        await s.execute_command("S0 180")
 
     asyncio.run(main())
 
