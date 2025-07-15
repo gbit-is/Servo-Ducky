@@ -1,27 +1,132 @@
+import asyncio
+import usb_cdc
 import board
 import busio
 import time
 import os
 import json
 import digitalio
-
-import usb_cdc
-
 from servo_ducky import servoducky
-import asyncio
 from adafruit_pca9685 import PCA9685
+import supervisor
 
 import circuitpython_base64 as base64
 
-# https://github.com/jimbobbennett/CircuitPython_Base64
+
+uart = usb_cdc.data
+
+# Store all running tasks
+running_tasks = set()
+
+# Example action function
+async def do_action(name: str, duration: float):
+    print(f"Starting action: {name}")
+    try:
+        await asyncio.sleep(duration)  # Simulate work
+        print(f"Finished action: {name}")
+    except asyncio.CancelledError:
+        print(f"Cancelled action: {name}")
+        raise
+
+# Wrapper to manage lifecycle
+async def track_task(coro):
+    task = asyncio.create_task(coro)
+    running_tasks.add(task)
+    try:
+        await task
+    except asyncio.CancelledError:
+        pass
+    running_tasks.discard(task)
+
+# Command dispatcher
+async def handle_command(command: str):
+
+    command = command.strip()
+
+    if command.upper().startswith("R"):
+        script_name = command.split()[1]
+        print("From Serial | Executing script:", script_name)
+        await s.run_script(script_name)
+        asyncio.create_task(track_task(s.run_script(script_name)))
+
+    elif command.upper().startswith("S"):
+
+        asyncio.create_task(track_task(s.execute_command(command)))
+
+        #await s.execute_command(serial_command)
+
+    elif "SDCC_INIT" in command.upper():
+        ducky_info = [
+            s._list_servos(),
+            list(s.scripts),
+            {"debug": s.class_args["debug_uart"]},
+            "DONE"
+        ]
+        print(ducky_info)
+        uart.write(json.dumps(ducky_info))
+
+    elif command.upper().startswith("LOAD"):
+        script_base64 = command.split("|")[1]
+        script_decoded = base64.decodebytes(script_base64.encode()).decode()
+        print("Loading script over UART")
+
+        asyncio.create_task(track_task(s.run_tmp_script(script_decoded)))
+        uart.write("Done running loaded script\n")
+        print("Done running loaded script")
+        #await s.run_tmp_script(script_decoded)
+
+
+
+    elif "DEBUG" in command.upper():
+        if "ENABLE" in command.upper():
+            s.class_args["debug_uart"] = True
+        elif "DISABLE" in command.upper():
+            s.class_args["debug_uart"] = False
+        elif "CHECK" in command.upper():
+            uart.write(str(s.class_args["debug_uart"]))
+
+    elif "WHOIS" in command.upper():
+        uart.write(WHOIS_ID)
+
+    elif command == "cancel_all":
+        print("Cancelling all actions...")
+        for task in list(running_tasks):
+            task.cancel()
+    elif command == "reload":
+        supervisor.reload()
+    else:
+        print("Invalid command: " + command)
+        uart.write("Invalid command: " + command + "\n")
+
+
+
+# Async UART listener
+async def uart_listener():
+    buffer = ""
+    print("UART listener started.")
+    while True:
+        if uart.in_waiting > 0:
+            c = uart.read(1).decode("utf-8")
+            if c == "\n":
+                await handle_command(buffer)
+                buffer = ""
+            else:
+                buffer += c
+        await asyncio.sleep(0.01)
+
+# Main entry point
+async def main():
+    asyncio.create_task(uart_listener())
+    while True:
+        await asyncio.sleep(1)
 
 
 
 
 
 
-import supervisor
-supervisor.runtime.autoreload = False
+
+
 
 
 WHOIS_ID = "servo_ducky_v0"
@@ -47,153 +152,24 @@ for POWER_PIN in POWER_PINS:
     if POWER_PINS[POWER_PIN]["ENABLED"]:
         POWER_PINS[POWER_PIN]["DIO"] = digitalio.DigitalInOut(POWER_PINS[POWER_PIN]["BOARD"])
         POWER_PINS[POWER_PIN]["DIO"].direction = digitalio.Direction.OUTPUT
+
+        #POWER_PINS[POWER_PIN]["DIO"].value = not POWER_PINS[POWER_PIN]["VALUE"]
         POWER_PINS[POWER_PIN]["DIO"].value = POWER_PINS[POWER_PIN]["VALUE"]
-
-
-
-
+time.sleep(1)
 
 PCA_FREQ = 60
 PCA_DUTY_CYCLE = 0x7FFF
 NUMBER_OF_SERVOS = 4
 
-# Create the I2C bus interface.
 i2c = busio.I2C(SCL_PIN,SDA_PIN)    # Pi Pico RP2040
 pca = PCA9685(i2c)
 pca.frequency = PCA_FREQ
 pca.channels[0].duty_cycle = PCA_DUTY_CYCLE
-
-
-
-uart = usb_cdc.data
-
 s = servoducky(pca=pca,uart=uart)
 
 
-serial_data = b""
-
-break_characters = [ "@", "\r" ]
-
-
-while True:
-
-
-
-    #asyncio.run(s.execute_command("S0 0"))
-    #asyncio.run(s.execute_command("DELAY 100"))
-    #asyncio.run(s.execute_command("S0 180"))
-
-    data = uart.read(1)
-
-    serial_data += data
-
-    #print("....." + str(serial_data))
-    #print(type(serial_data))
-
-
-
-    if any(breaking_character in serial_data for breaking_character in break_characters):
-        serial_command = serial_data
-
-        serial_command = serial_command.decode()
-
-        serial_data = b""
-
-        #print(str(serial_command) + "___")
-        serial_command = serial_command.replace("@","")
-        serial_command = serial_command.strip()
-
-        #serial_command = serial_command.upper()
-
-
-
-        if serial_command.upper().startswith("R"):
-            script_name = serial_command.split()[1]
-            print("From Serial|Executing script: " + script_name)
-
-            print(script_name)
-
-            asyncio.run(s.run_script(script_name))
-
-        elif "WHOIS" in serial_command.upper():
-            uart.write(WHOIS_ID)
-
-        elif "LIST_SERVOS" in serial_command.upper():
-            print("list servos to uart")
-            servo_info = s._list_servos()
-            servo_info.append("DONE")
-            uart.write(json.dumps(servo_info))
-
-        elif serial_command.upper().startswith("LOAD"):
-
-
-            script_base64 = serial_command.split("|")[1]
-            script_decoded = base64.decodebytes(script_base64.encode()).decode()
-
-            print("LOADING SCRIPT OVER UART")
-            asyncio.run(s.run_tmp_script(script_decoded))
-
-
-        elif serial_command.upper().startswith("LIST"):
-            print("Requesting list of scripts")
-
-            scripts = [ ]
-            for script in s.scripts:
-                scripts.append(script)
-
-            script.append("DONE")
-
-            uart.write(json.dumps(scripts))
-
-        elif "SDCC_INIT" in serial_command.upper():
-
-            ducky_info = [ ]
-
-            servo_info = s._list_servos()
-
-            ducky_info.append(servo_info)
-
-            scripts = [ ]
-            for script in s.scripts:
-                scripts.append(script)
-
-            ducky_info.append(scripts)
-
-            debug_info = { "debug" : s.class_args["debug_uart"] }
-
-            ducky_info.append(debug_info)
-            ducky_info.append("DONE")
-            print(ducky_info)
-            uart.write(json.dumps(ducky_info))
-
-        elif "DEBUG" in serial_command.upper():
-            if "ENABLE" in serial_command.upper():
-                s.class_args["debug_uart"] = True
-            elif "DISABLE" in serial_command.upper():
-                s.class_args["debug_uart"] = False
-            elif "CHECK" in serial_command.upper():
-                uart.write(str(s.class_args["debug_uart"]))
-
-
-
-        else:
-
-            serial_command = serial_command.upper()
-
-            serial_command = serial_command.strip()
-
-            print("From Serial|Executing command: " + serial_command)
-            asyncio.run(s.execute_command(serial_command))
 
 
 
 
-
-
-
-
-
-
-
-
-
+asyncio.run(main())
