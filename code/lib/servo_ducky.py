@@ -220,6 +220,8 @@ class servoducky():
 
     async def run_script(self,script_name):
 
+        self.debug("Running script: " + script_name)
+
         if script_name not in self.scripts:
             self.debug("script not found")
             return
@@ -230,22 +232,32 @@ class servoducky():
         function_name = "main"
         await self._execute_function(script,function_name)
 
+        self.debug("Finished running script: " + script_name)
+
     async def run_tmp_script(self,tmp_script):
 
         script_name = tmp_script
         function_name = "main"
+
+        self.debug("Running script: " + script_name)
 
         script = self.read_script(script_name)
 
 
         await self._execute_function(script,function_name)
 
+        self.debug("Finished running script: " + script_name)
+
 
     async def _execute_function(self,script,function_name,params=[]):
+
+
 
         function = script[function_name]
         for line in function:
             await self.execute_command(line,script,params)
+
+
 
 
 
