@@ -5,7 +5,7 @@ S0 180  300
 R routine_1 S0 S1
 delay 700
 R routine_1 S1 S0
-delay 5000
+delay 50
 R routine_1 S2 S3
 
 

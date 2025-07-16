@@ -1,0 +1,10 @@
+[main]
+R FLAP 0
+#delay 100
+R FLAP 20
+
+
+
+[FLAP]
+S0 _0
+S1 _0
