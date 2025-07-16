@@ -15,8 +15,14 @@ import circuitpython_base64 as base64
 
 uart = usb_cdc.data
 
+
+
 # Store all running tasks
 running_tasks = set()
+
+def print_to_serial(msg):
+
+    uart.write(msg + "\n")
 
 # Example action function
 async def do_action(name: str, duration: float):
@@ -51,6 +57,8 @@ async def handle_command(command: str):
 
     elif command.upper().startswith("S"):
 
+        print(running_tasks)
+
         asyncio.create_task(track_task(s.execute_command(command)))
 
         #await s.execute_command(serial_command)
@@ -63,7 +71,7 @@ async def handle_command(command: str):
             "DONE"
         ]
         print(ducky_info)
-        uart.write(json.dumps(ducky_info))
+        print_to_serial(json.dumps(ducky_info))
 
     elif command.upper().startswith("LOAD"):
         script_base64 = command.split("|")[1]
@@ -71,7 +79,7 @@ async def handle_command(command: str):
         print("Loading script over UART")
 
         asyncio.create_task(track_task(s.run_tmp_script(script_decoded)))
-        uart.write("Done running loaded script\n")
+        s.debug("C: Done running loaded script\n")
         print("Done running loaded script")
         #await s.run_tmp_script(script_decoded)
 
@@ -83,20 +91,21 @@ async def handle_command(command: str):
         elif "DISABLE" in command.upper():
             s.class_args["debug_uart"] = False
         elif "CHECK" in command.upper():
-            uart.write(str(s.class_args["debug_uart"]))
+            print_to_serial(str(s.class_args["debug_uart"]))
 
     elif "WHOIS" in command.upper():
-        uart.write(WHOIS_ID)
+        print_to_serial(WHOIS_ID)
 
     elif command == "cancel_all":
         print("Cancelling all actions...")
+        s.debug("Cancelling all actions...\n")
         for task in list(running_tasks):
             task.cancel()
     elif command == "reload":
         supervisor.reload()
     else:
         print("Invalid command: " + command)
-        uart.write("Invalid command: " + command + "\n")
+        s.debug("Invalid command: " + command + "\n")
 
 
 
