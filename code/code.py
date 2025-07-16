@@ -26,12 +26,12 @@ def print_to_serial(msg):
 
 # Example action function
 async def do_action(name: str, duration: float):
-    print(f"Starting action: {name}")
+    #print(f"Starting action: {name}")
     try:
         await asyncio.sleep(duration)  # Simulate work
-        print(f"Finished action: {name}")
+        #print(f"Finished action: {name}")
     except asyncio.CancelledError:
-        print(f"Cancelled action: {name}")
+        #print(f"Cancelled action: {name}")
         raise
 
 # Wrapper to manage lifecycle
@@ -51,13 +51,12 @@ async def handle_command(command: str):
 
     if command.upper().startswith("R"):
         script_name = command.split()[1]
-        print("From Serial | Executing script:", script_name)
+        #print("From Serial | Executing script:", script_name)
         await s.run_script(script_name)
         asyncio.create_task(track_task(s.run_script(script_name)))
 
     elif command.upper().startswith("S"):
 
-        print(running_tasks)
 
         asyncio.create_task(track_task(s.execute_command(command)))
 
@@ -70,18 +69,16 @@ async def handle_command(command: str):
             {"debug": s.class_args["debug_uart"]},
             "DONE"
         ]
-        print(ducky_info)
         print_to_serial(json.dumps(ducky_info))
 
     elif command.upper().startswith("LOAD"):
         script_base64 = command.split("|")[1]
         script_decoded = base64.decodebytes(script_base64.encode()).decode()
-        print("Loading script over UART")
+        #print("Loading script over UART")
 
         asyncio.create_task(track_task(s.run_tmp_script(script_decoded)))
         s.debug("C: Done running loaded script\n")
-        print("Done running loaded script")
-        #await s.run_tmp_script(script_decoded)
+        #print("Done running loaded script")
 
 
 
