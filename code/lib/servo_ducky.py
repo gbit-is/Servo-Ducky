@@ -95,7 +95,7 @@ class servoducky():
                     self.class_args["uart"].write("DEBUG: " + str(message) + "\n" )
                 except Exception as e:
                     print("Unable to print to UART. Error is:\n" + str(e))
-        print(message)
+        #print(message)
 
 
     def set_status_led(self,color):
@@ -355,7 +355,7 @@ class servoducky():
 
 
 
-                    delay_time = (servo_time / pos_diff) / 100
+                    delay_time = (servo_time / pos_diff) / 1000
 
                     self.debug("setting servo: " + servo_id + " from angle " + str(current_pos) + " to angle " + str(servo_angle) + " in: " + str(servo_time) + " ms")
 
@@ -388,26 +388,27 @@ class servoducky():
                     delta_step_time_s = stop_step_time_s - start_step_time_s
 
 
+                    print("DELAY_TIME, MS_TIME, S_Time")
+                    print(servo_time,delta_step_time_ms,delta_step_time_s)
+                    #print(str(servo_time).ljust(10),str(delta_step_time_ms).ljust(10),str(delta_step_time).ljust(10))
 
             elif line.upper().startswith("DELAY"):
 
 
                 if len(line_split) < 2:
                     self.debug("No delay time specified in line: " + line)
-                    delay_time = 100
+                    delay_time = 1000
                 else:
                     delay_time = line_split[1]
 
                 delay_time = float(delay_time)
 
-                delay_time = delay_time / 100
+                delay_time = delay_time / 1000
 
                 self.debug("sleeping for: " + str(delay_time))
 
 
-                print("doing sleep")
                 await asyncio.sleep(delay_time)
-                print("sleep done")
 
             elif line.startswith("R"):
                 params = line.split()
@@ -490,16 +491,16 @@ if __name__ == "__main__":
         #asyncio.run(s.run_tmp_script(script_decoded))
 
 
-        #print(s._list_servos())
+
         #await s.run_script("ES1")
 
         script_name = "func_debug"
 
         #asyncio.run(s.run_script(script_name))
         #print(s.scripts)
-        await s.execute_command("S0 0")
-        await s.execute_command("DELAY 100")
-        await s.execute_command("S0 180")
+        await s.execute_command("S0 0 1000")
+        #await s.execute_command("DELAY 100")
+        #await s.execute_command("S0 180")
 
     asyncio.run(main())
 
