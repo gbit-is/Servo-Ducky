@@ -37,6 +37,9 @@ class servoducky():
     CLASS_DEFAULTS["number_of_servos"] = 16
     CLASS_DEFAULTS["neopixel_pin"] = board.GP16
     CLASS_DEFAULTS["debug_uart"] = False
+    CLASS_DEFAULTS["debug_console"] = False
+
+
 
 
 
@@ -54,6 +57,8 @@ class servoducky():
         except Exception as e:
             self.NEOPIXEL_LIB = False
 
+        self.positive_time_adjuster = 0.89
+        self.negative_time_adjuster = 0.89
 
 
         self.class_args = kwargs
@@ -95,7 +100,8 @@ class servoducky():
                     self.class_args["uart"].write("DEBUG: " + str(message) + "\n" )
                 except Exception as e:
                     print("Unable to print to UART. Error is:\n" + str(e))
-        #print(message)
+        if self.class_args["debug_console"]:
+            print(message)
 
 
     def set_status_led(self,color):
@@ -340,6 +346,8 @@ class servoducky():
                         servo_time = 1
 
 
+                    step_sleep_time = 10
+
 
 
                     current_pos = int(self.servos[servo_id]["servo"].angle)
@@ -350,47 +358,32 @@ class servoducky():
                         current_pos = 1
 
 
-                    pos_diff = int(abs(current_pos - servo_angle))
+                    pos_diff = max(int(abs(current_pos - servo_angle)),1)
+                    pos_diff = servo_angle - current_pos
+                    direction = 1 if pos_diff >= 0 else -1
+                    abs_pos_diff = abs(pos_diff)
 
 
+                    steps_needed = max(1, int(servo_time // step_sleep_time))
+
+                    angle_per_step = (abs_pos_diff / steps_needed) * direction
 
 
-                    delay_time = (servo_time / pos_diff) / 1000
+                    print(steps_needed, angle_per_step)
 
-                    self.debug("setting servo: " + servo_id + " from angle " + str(current_pos) + " to angle " + str(servo_angle) + " in: " + str(servo_time) + " ms")
+                    for i in range(steps_needed):
+                        step_angle = current_pos + (i + 1) * angle_per_step
+                        #print(step_angle)
+                        self.servos[servo_id]["servo"].angle = step_angle
+                        #print(step_angle)
+                        await asyncio.sleep(step_sleep_time / 1000 )
 
-                    step_val = 1
-                    if servo_angle < current_pos:
-                        step_val = step_val * -1
+                    self.servos[servo_id]["servo"].angle = servo_angle
 
+                    #await asyncio.sleep(0.01)
 
-                    invalid_step = True
+                    return 0
 
-                    start_step_time_ms = supervisor.ticks_ms()
-                    start_step_time_s = time.monotonic()
-
-
-                    for step in range(current_pos,servo_angle,step_val):
-                        invalid_step = False
-                        self.debug("Stepping servo: " + servo_id + " to " + str(step) )
-                        self.servos[servo_id]["servo"].angle = step
-                        await asyncio.sleep(delay_time)
-
-                    if invalid_step:
-                        self.debug("else break")
-                        self.servos[servo_id]["servo"].angle = servo_angle
-
-
-                    stop_step_time_ms = supervisor.ticks_ms()
-                    stop_step_time_s = time.monotonic()
-
-                    delta_step_time_ms = stop_step_time_ms - start_step_time_ms
-                    delta_step_time_s = stop_step_time_s - start_step_time_s
-
-
-                    print("DELAY_TIME, MS_TIME, S_Time")
-                    print(servo_time,delta_step_time_ms,delta_step_time_s)
-                    #print(str(servo_time).ljust(10),str(delta_step_time_ms).ljust(10),str(delta_step_time).ljust(10))
 
             elif line.upper().startswith("DELAY"):
 
@@ -479,6 +472,10 @@ if __name__ == "__main__":
 
     async def main():
 
+        pass
+
+        #print(s.time_multiplier)
+
 
         #import circuitpython_base64 as base64
 
@@ -494,11 +491,53 @@ if __name__ == "__main__":
 
         #await s.run_script("ES1")
 
-        script_name = "func_debug"
+        #script_name = "func_debug"
 
         #asyncio.run(s.run_script(script_name))
         #print(s.scripts)
-        await s.execute_command("S0 0 1000")
+        #print("delay_time, delay_time_adjusted,delta_step_time_ms,time_ratio,time_multiplier")
+
+        s.class_args["debug_console"] = False
+
+        p = [ ]
+        n = [ ]
+
+        step_time = "250"
+
+        for i in range(1,2):
+
+            print("move")
+            a = supervisor.ticks_ms()
+            await s.execute_command("S0 180 " + step_time)
+            b = supervisor.ticks_ms()
+            print("sleep")
+            await s.execute_command("DELAY 2500")
+            print("move again")
+            c = supervisor.ticks_ms()
+            await s.execute_command("S0 0 " + step_time)
+            d = supervisor.ticks_ms()
+
+        x = b - a
+        y = d -c
+        print(x,y)
+        z = x / int(step_time)
+        zz = y / int(step_time)
+        print(z,zz)
+
+        await asyncio.sleep(0.5)
+
+        #print("MAX:  POS/NEG")
+        #print(max(p),max(n))
+        #print("MIN: POS/NEG")
+        #print(min(p),min(n))
+        #print("AVG:   POS/NEG")
+        #print(( sum(p) / len(p) ),( sum(n) / len(n)))
+
+
+
+
+
+
         #await s.execute_command("DELAY 100")
         #await s.execute_command("S0 180")
 
