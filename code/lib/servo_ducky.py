@@ -530,7 +530,6 @@ if __name__ == "__main__":
             await s.execute_command("S0 180 " + step_time)
             b = supervisor.ticks_ms()
             await s.execute_command("DELAY 2500")
-            print("move again")
             c = supervisor.ticks_ms()
             await s.execute_command("S0 0 " + step_time)
             d = supervisor.ticks_ms()
