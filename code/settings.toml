@@ -2,3 +2,6 @@ default_actuation_range = 180
 default_min_pulse = 500
 default_max_pulse = 2600
 default_locked = "False"
+SCL_PIN=27
+SDA_PIN=26
+OE_PIN=28

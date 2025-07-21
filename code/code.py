@@ -11,11 +11,30 @@ from adafruit_pca9685 import PCA9685
 import supervisor
 
 import circuitpython_base64 as base64
-
-
 uart = usb_cdc.data
 
+WHOIS_ID = "servo_ducky_v0"
 
+# Set defaults pins
+#SCL_PIN = board.GP27
+#SDA_PIN = board.GP26
+#OE_PIN = board.GP28
+
+#
+
+PCA_PINS = { }
+PCA_PINS["SCL_PIN"] = { "default" : 27 }
+PCA_PINS["SDA_PIN"] = { "default" : 26 }
+PCA_PINS["OE_PIN"]  = { "default" : 28 }
+
+for PCA_PIN in PCA_PINS:
+    if os.getenv(PCA_PIN):
+        pin_number = os.getenv(PCA_PIN)
+    else:
+        pin_number = PCA_PINS[PCA_PIN]["default"]
+
+    pin_name = "GP" + str(pin_number)
+    PCA_PINS[PCA_PIN] = getattr(board,pin_name)
 
 # Store all running tasks
 running_tasks = set()
@@ -135,12 +154,7 @@ async def main():
 
 
 
-WHOIS_ID = "servo_ducky_v0"
 
-
-SCL_PIN = board.GP27
-SDA_PIN = board.GP26
-OE_PIN = board.GP28
 
 POWER_PINS = { }
 
@@ -167,7 +181,7 @@ PCA_FREQ = 60
 PCA_DUTY_CYCLE = 0x7FFF
 NUMBER_OF_SERVOS = 4
 
-i2c = busio.I2C(SCL_PIN,SDA_PIN)    # Pi Pico RP2040
+i2c = busio.I2C(PCA_PINS["SCL_PIN"],PCA_PINS["SDA_PIN"])    # Pi Pico RP2040
 pca = PCA9685(i2c)
 pca.frequency = PCA_FREQ
 pca.channels[0].duty_cycle = PCA_DUTY_CYCLE
