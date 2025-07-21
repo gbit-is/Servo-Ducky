@@ -53,11 +53,12 @@ s = servoducky(pca=pca)
 step_times = [ ]
 
 # generate list of step times to measure
-s1 = list(range(1,50))
+s1 = list(range(100,101,5))
 s2 = list(range(50,2501,50))
+s3 = list(range(2500,10000,500))
 step_times.extend(s1)
 step_times.extend(s2)
-
+step_times.extend(s3)
 
 
 # go to initial position
@@ -92,9 +93,9 @@ async def perform_test(step_time):
 
 
     # format choices
-    delim = "|" # Delimiter for printout
-    ots = "."   # old thousands seperator
-    nts = ","   # new thousands seperator
+    delim = "," # Delimiter for printout
+    ots = "---"   # old thousands seperator, put as "---" to disale
+    nts = "---"   # new thousands seperator, put as "---" to disale
 
     line = ""
     line += str(step_time) + delim

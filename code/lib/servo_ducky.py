@@ -369,7 +369,7 @@ class servoducky():
                     angle_per_step = (abs_pos_diff / steps_needed) * direction
 
 
-                    print(steps_needed, angle_per_step)
+                    #print("steps needed,angle_per_step:", steps_needed, angle_per_step)
 
                     for i in range(steps_needed):
                         step_angle = current_pos + (i + 1) * angle_per_step
@@ -502,27 +502,46 @@ if __name__ == "__main__":
         p = [ ]
         n = [ ]
 
-        step_time = "250"
+        step_times = [ ]
 
-        for i in range(1,2):
+        s1 = list(range(1,50))
+        s2 = list(range(50,2501,50))
 
-            print("move")
+
+
+        step_times.extend(s1)
+        step_times.extend(s2)
+
+        print(step_times)
+
+        asdadas
+
+        # 250 = 1.056 , 1.096
+        # 500 = 1.092 1.078
+        # 750
+
+        print("step time, pos_multiplier, neg_multiplier")
+
+        for step_time in step_times:
+
+            step_time = str(step_time)
+
             a = supervisor.ticks_ms()
             await s.execute_command("S0 180 " + step_time)
             b = supervisor.ticks_ms()
-            print("sleep")
             await s.execute_command("DELAY 2500")
             print("move again")
             c = supervisor.ticks_ms()
             await s.execute_command("S0 0 " + step_time)
             d = supervisor.ticks_ms()
 
-        x = b - a
-        y = d -c
-        print(x,y)
-        z = x / int(step_time)
-        zz = y / int(step_time)
-        print(z,zz)
+            x = b - a
+            y = d -c
+
+            z = x / int(step_time)
+            zz = y / int(step_time)
+
+            #print(str(step_time) + "|" + str(z) + "|" + str(zz))
 
         await asyncio.sleep(0.5)
 
