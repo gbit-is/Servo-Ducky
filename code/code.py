@@ -41,7 +41,8 @@ running_tasks = set()
 
 def print_to_serial(msg):
 
-    uart.write(msg + "\n")
+    uart.write(str(msg) + "\n")
+    print(str(msg))
 
 # Example action function
 async def do_action(name: str, duration: float):
@@ -69,17 +70,23 @@ async def handle_command(command: str):
     command = command.strip()
 
     if command.upper().startswith("R"):
-        script_name = command.split()[1]
-        #print("From Serial | Executing script:", script_name)
-        await s.run_script(script_name)
-        asyncio.create_task(track_task(s.run_script(script_name)))
+        try:
+            script_name = command.split()[1]
+            await s.run_script(script_name)
+            asyncio.create_task(track_task(s.run_script(script_name)))
+        except Exception as e:
+            print_to_serial("Error running R command: " + command )
+            print_to_serial(str(e))
 
     elif command.upper().startswith("S"):
 
 
-        asyncio.create_task(track_task(s.execute_command(command)))
+        try:
+            asyncio.create_task(track_task(s.execute_command(command.upper())))
+        except Exception as e:
+            print_to_serial("Error running S command: " + command)
+            print_to_serial(e)
 
-        #await s.execute_command(serial_command)
 
     elif "SDCC_INIT" in command.upper():
         ducky_info = [
@@ -91,17 +98,21 @@ async def handle_command(command: str):
         print_to_serial(json.dumps(ducky_info))
 
     elif command.upper().startswith("LOAD"):
-        script_base64 = command.split("|")[1]
-        script_decoded = base64.decodebytes(script_base64.encode()).decode()
-        #print("Loading script over UART")
 
-        asyncio.create_task(track_task(s.run_tmp_script(script_decoded)))
-        s.debug("C: Done running loaded script\n")
-        #print("Done running loaded script")
+        try:
+            script_base64 = command.split("|")[1]
+            script_decoded = base64.decodebytes(script_base64.encode()).decode()
+
+            asyncio.create_task(track_task(s.run_tmp_script(script_decoded)))
+            s.debug("C: Done running loaded script\n")
+        except Exception as e:
+            print_to_serial("Unable to run load command")
+            print_to_serial(e)
 
 
 
     elif "DEBUG" in command.upper():
+
         if "ENABLE" in command.upper():
             s.class_args["debug_uart"] = True
         elif "DISABLE" in command.upper():
@@ -113,15 +124,20 @@ async def handle_command(command: str):
         print_to_serial(WHOIS_ID)
 
     elif command == "cancel_all":
-        print("Cancelling all actions...")
+        print_to_serial("Cancelling all actions...")
         s.debug("Cancelling all actions...\n")
         for task in list(running_tasks):
             task.cancel()
-    elif command == "reload":
+    elif command == "_reload":
+
+        #supervisor.runtime.autoreload = False
+
+        print_to_serial("Reloading code.py")
+        #supervisor.set_next_code_file("code.py")
+        print_to_serial("this might break any terminal connections")
         supervisor.reload()
     else:
-        print("Invalid command: " + command)
-        s.debug("Invalid command: " + command + "\n")
+        print_to_serial("Invalid command: " + command)
 
 
 
