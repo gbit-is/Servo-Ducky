@@ -83,7 +83,7 @@ S1 180        # Servo 1, go to position 180°
 R some_routine S4 S5 0   # Execute routine "some_routine" with variables 0 and 1 as S4 and S5, and variable 2 as 0
 delay 500    # wait for half a second
 R some_routine S5 S4 180  # execute routime "some_routine" with the servo variables from before, but switched around and the final variable as 180
-
+DELAY 500
 
 [some_routine]    # Create header for new routine
 _0 0              # First specified servo, go to position 0
@@ -94,6 +94,9 @@ _1 45             # Second specified servo, go to position 45
 DELAY 1000        # wait for a second
 _0 _2             # First specified Servo, go to the position specified in the third varialbe
 _1 _2             # Second specified Servo, go to the position specified in the third varialbe
+
+[another_routine]
+
 
 
 ```
