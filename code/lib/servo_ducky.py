@@ -316,7 +316,7 @@ class servoducky():
                             r0 = int(servo_range[0])
                             r1 = int(servo_range[1])
 
-                            servo_ids = list(range(r0,r1))
+                            servo_ids = list(range(r0,r1 + 1 ))
 
                         except Exception as e:
                             self.debug("Unable to create a servo range with line " + orig_line)
