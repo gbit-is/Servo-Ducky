@@ -5,6 +5,7 @@ import board
 import supervisor
 import time
 import circuitpython_base64 as base64
+import random
 
 
 from adafruit_pca9685 import PCA9685
@@ -40,7 +41,10 @@ class servoducky():
     CLASS_DEFAULTS["neopixel_pin"] = board.GP16
     CLASS_DEFAULTS["debug_uart"] = False
     CLASS_DEFAULTS["debug_console"] = False
+    CLASS_DEFAULTS["MAX_WAIT"] = 50
 
+
+    actions = { }
 
 
 
@@ -106,7 +110,10 @@ class servoducky():
             print(message)
 
     def write_to_uart(self,message):
-        self.class_args["uart"].write(str(message) + "\n")
+        try:
+            self.class_args["uart"].write(str(message) + "\n")
+        except:
+            pass
         print(message)
 
 
@@ -233,17 +240,29 @@ class servoducky():
 
     async def run_script(self,script_name):
 
+
+
+
         self.debug("Running script: " + script_name)
 
         if script_name not in self.scripts:
             self.debug("script not found")
             return
 
+        if script_name in self.actions:
+            self.write_to_uart("Script already running")
+            #todo, add some zombie checking logic here
+        else:
+            self.actions[script_name] = set()
+            self.actions[script_name].add(0)
+
         script_contents = open(self.scripts[script_name],"r").read()
         script = self.read_script(script_contents)
 
         function_name = "main"
-        await self._execute_function(script,function_name)
+        print("------- A")
+        await self._execute_function(script,function_name,script_name)
+        print("-------- B")
 
         self.debug("Finished running script: " + script_name)
 
@@ -257,29 +276,45 @@ class servoducky():
         script = self.read_script(script_name)
 
 
-        await self._execute_function(script,function_name)
+        await self._execute_function(script,function_name,script_name)
 
         self.debug("Finished running script: " + script_name)
 
 
-    async def _execute_function(self,script,function_name,params=[]):
+    async def _execute_function(self,script,function_name,script_name,params=[]):
 
 
 
         function = script[function_name]
         for line in function:
-            self.write_to_uart("....." + line)
+
+
+            if "WAIT" not in line:
+
+                line_id = max(self.actions[script_name]) + 1
+                self.actions[script_name].add(line_id)
+
+
 
             if "DELAY" in line.upper():
-                await self.execute_command(line,script,params)
+                print("DELAY")
+                await self.execute_command(line,script_name,script,params)
+            elif "WAIT" in line.upper():
+                print("WAIT")
+                print(self.actions[script_name])
+                await self.execute_command(line,script_name,script,params)
+
             else:
-                asyncio.create_task(self.execute_command(line,script,params))
+                ### todo need to add logic here to gather tasks and discard ids based on execution finishing
+                asyncio.create_task(self.execute_command(line,script_name,script,params))
+
+            self.actions[script_name].discard(line_id)
 
 
 
 
 
-    async def execute_command(self,line,script="",params=[]):
+    async def execute_command(self,line,script_name="no_script",script="",params=[],line_id=""):
 
 
             self.debug("Executing command: " + str(line))
@@ -307,8 +342,6 @@ class servoducky():
 
             if line.startswith("S"):
 
-
-                self.write_to_uart(line)
 
                 servo_ids = None
 
@@ -442,6 +475,31 @@ class servoducky():
 
                 await asyncio.sleep(delay_time)
 
+            elif "WAIT" in line.upper():
+
+                do_wait = True
+                wait_counter = 0
+
+                while do_wait:
+                    print(".....")
+                    print(self.actions[script_name])
+                    print(len(self.actions[script_name]))
+                    if len(self.actions[script_name]) == 1:
+                        print("no need to wait anymore")
+                        do_wait = False
+
+
+                    print(wait_counter,self.class_args["MAX_WAIT"])
+
+                    wait_counter += 1
+                    if wait_counter > self.class_args["MAX_WAIT"]:
+                        do_wait = False
+
+                    if do_wait:
+                        await asyncio.sleep(0.25)
+
+
+
             elif line.startswith("R"):
                 params = line.split()
                 params.pop(0)
@@ -449,7 +507,7 @@ class servoducky():
                 params.pop(0)
 
                 self.debug("executing function: " + routine + " with params: " + str(params))
-                await self._execute_function(script,routine,params)
+                await self._execute_function(script,routine,script_name,params)
 
             elif line.startswith("G"):
 
