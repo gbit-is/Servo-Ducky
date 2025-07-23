@@ -296,93 +296,101 @@ class servoducky():
 
             if line.startswith("S"):
 
-
                 line = line[1:]
                 line_split = line.split()
 
-
-
-                line = line[1:]
-
-
-                servo_id = line_split[0]
+                if "[" in line:
 
 
 
+                    servo_raw = line_split[0].replace("[","").replace("]","")
 
-                if servo_id not in self.servos:
-                    self.debug("Invalid servo: " + servo_id)
-                    return
-
-
-                try:
-                    servo_angle = int(line_split[1])
-                except:
-                    self.debug(line_split[1] + " is not an interger")
-                    return
+                    if "," in servo_raw:
+                        servo_ids = servo_raw.split(",")
 
 
-
-
-
-                actuation_range = self.servos[servo_id]["servo"].actuation_range
-                if servo_angle > actuation_range:
-                    self.debug("WARNING: ")
-                    self.debug('LINE: "' + line + '" is invalid')
-                    self.debug("movement is defined at: " + str(servo_angle) + "° but the max range is: " + str(actuation_range) +"°")
-                    self.debug("reducing angle to: " + str(actuation_range))
-                    servo_angle = actuation_range
-
-
-                if len(line_split) == 2:
-                    self.debug("setting servo: " + servo_id + " to angle " + str(servo_angle))
-                    self.servos[servo_id]["servo"].angle = servo_angle
                 else:
 
 
-                    servo_time = int(line_split[2])
 
-                    if servo_time == 0:
-                        servo_time = 1
+                    servo_ids = [ line_split[0] ]
 
 
-                    step_sleep_time = 10
+                for servo_id in servo_ids:
+
+                    if servo_id not in self.servos:
+                        self.debug("Invalid servo: " + servo_id)
+                        return
+
+
+                    try:
+                        servo_angle = int(line_split[1])
+                    except:
+                        self.debug(line_split[1] + " is not an interger")
+                        return
 
 
 
-                    current_pos = int(self.servos[servo_id]["servo"].angle)
+
+
+                    actuation_range = self.servos[servo_id]["servo"].actuation_range
+                    if servo_angle > actuation_range:
+                        self.debug("WARNING: ")
+                        self.debug('LINE: "' + line + '" is invalid')
+                        self.debug("movement is defined at: " + str(servo_angle) + "° but the max range is: " + str(actuation_range) +"°")
+                        self.debug("reducing angle to: " + str(actuation_range))
+                        servo_angle = actuation_range
+
+
+                    if len(line_split) == 2:
+                        self.debug("setting servo: " + servo_id + " to angle " + str(servo_angle))
+                        self.servos[servo_id]["servo"].angle = servo_angle
+                    else:
+
+
+                        servo_time = int(line_split[2])
+
+                        if servo_time == 0:
+                            servo_time = 1
+
+
+                        step_sleep_time = 10
 
 
 
-                    if current_pos > 400:
-                        current_pos = 1
+                        current_pos = int(self.servos[servo_id]["servo"].angle)
 
 
-                    pos_diff = max(int(abs(current_pos - servo_angle)),1)
-                    pos_diff = servo_angle - current_pos
-                    direction = 1 if pos_diff >= 0 else -1
-                    abs_pos_diff = abs(pos_diff)
+
+                        if current_pos > 400:
+                            current_pos = 1
 
 
-                    steps_needed = max(1, int(servo_time // step_sleep_time))
+                        pos_diff = max(int(abs(current_pos - servo_angle)),1)
+                        pos_diff = servo_angle - current_pos
+                        direction = 1 if pos_diff >= 0 else -1
+                        abs_pos_diff = abs(pos_diff)
 
-                    angle_per_step = (abs_pos_diff / steps_needed) * direction
+
+                        steps_needed = max(1, int(servo_time // step_sleep_time))
+
+                        angle_per_step = (abs_pos_diff / steps_needed) * direction
 
 
-                    #print("steps needed,angle_per_step:", steps_needed, angle_per_step)
+                        #print("steps needed,angle_per_step:", steps_needed, angle_per_step)
 
-                    for i in range(steps_needed):
-                        step_angle = current_pos + (i + 1) * angle_per_step
-                        #print(step_angle)
-                        self.servos[servo_id]["servo"].angle = step_angle
-                        #print(step_angle)
-                        await asyncio.sleep(step_sleep_time / 1000 )
+                        for i in range(steps_needed):
+                            step_angle = current_pos + (i + 1) * angle_per_step
+                            #print(step_angle)
+                            self.servos[servo_id]["servo"].angle = step_angle
+                            #print(step_angle)
+                            await asyncio.sleep(step_sleep_time / 1000 )
 
-                    self.servos[servo_id]["servo"].angle = servo_angle
+                        self.servos[servo_id]["servo"].angle = servo_angle
 
-                    #await asyncio.sleep(0.01)
+                        #await asyncio.sleep(0.01)
 
-                    return 0
+                        return 0
 
 
             elif line.upper().startswith("DELAY"):
@@ -472,92 +480,14 @@ if __name__ == "__main__":
 
     async def main():
 
-        pass
 
-        #print(s.time_multiplier)
+        s.class_args["debug_console"] = True
+        #await s.execute_command("S[0,2] 0")
+        await s.execute_command("S0 0")
 
-
-        #import circuitpython_base64 as base64
-
-
-
-        #script_base64 = "W21haW5dClMwIDAKREVMQVkgMTUwICMgaGVsbG8gdGhlcmUKUzAgMTgwICAzMDAK"
-
-
-        #script_decoded = base64.decodebytes(script_base64.encode()).decode()
-        #asyncio.run(s.run_tmp_script(script_decoded))
-
-
-
-        #await s.run_script("ES1")
-
-        #script_name = "func_debug"
-
-        #asyncio.run(s.run_script(script_name))
-        #print(s.scripts)
-        #print("delay_time, delay_time_adjusted,delta_step_time_ms,time_ratio,time_multiplier")
-
-        s.class_args["debug_console"] = False
-
-        p = [ ]
-        n = [ ]
-
-        step_times = [ ]
-
-        s1 = list(range(1,50))
-        s2 = list(range(50,2501,50))
-
-
-
-        step_times.extend(s1)
-        step_times.extend(s2)
-
-        print(step_times)
-
-        asdadas
-
-        # 250 = 1.056 , 1.096
-        # 500 = 1.092 1.078
-        # 750
-
-        print("step time, pos_multiplier, neg_multiplier")
-
-        for step_time in step_times:
-
-            step_time = str(step_time)
-
-            a = supervisor.ticks_ms()
-            await s.execute_command("S0 180 " + step_time)
-            b = supervisor.ticks_ms()
-            await s.execute_command("DELAY 2500")
-            c = supervisor.ticks_ms()
-            await s.execute_command("S0 0 " + step_time)
-            d = supervisor.ticks_ms()
-
-            x = b - a
-            y = d -c
-
-            z = x / int(step_time)
-            zz = y / int(step_time)
-
-            #print(str(step_time) + "|" + str(z) + "|" + str(zz))
 
         await asyncio.sleep(0.5)
 
-        #print("MAX:  POS/NEG")
-        #print(max(p),max(n))
-        #print("MIN: POS/NEG")
-        #print(min(p),min(n))
-        #print("AVG:   POS/NEG")
-        #print(( sum(p) / len(p) ),( sum(n) / len(n)))
-
-
-
-
-
-
-        #await s.execute_command("DELAY 100")
-        #await s.execute_command("S0 180")
 
     asyncio.run(main())
 
