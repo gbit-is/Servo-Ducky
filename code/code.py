@@ -96,6 +96,9 @@ async def handle_command(command: str):
 
     elif command.upper().startswith("LOAD"):
 
+
+
+        script_base64 = command.split("|")[1]
         try:
             script_base64 = command.split("|")[1]
             script_decoded = base64.decodebytes(script_base64.encode()).decode()
@@ -104,6 +107,7 @@ async def handle_command(command: str):
             s.debug("C: Done running loaded script\n")
         except Exception as e:
             print_to_serial("Unable to run load command")
+            print(e)
             print_to_serial(e)
 
 
@@ -160,16 +164,6 @@ async def main():
     asyncio.create_task(uart_listener())
     while True:
         await asyncio.sleep(1)
-
-
-
-
-
-
-
-
-
-
 
 
 POWER_PINS = { }
