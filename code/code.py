@@ -15,12 +15,6 @@ uart = usb_cdc.data
 
 WHOIS_ID = "servo_ducky_v0"
 
-# Set defaults pins
-#SCL_PIN = board.GP27
-#SDA_PIN = board.GP26
-#OE_PIN = board.GP28
-
-#
 
 PCA_PINS = { }
 PCA_PINS["SCL_PIN"] = { "default" : 27 }
@@ -56,8 +50,10 @@ async def do_action(name: str, duration: float):
 
 # Wrapper to manage lifecycle
 async def track_task(coro):
+
     task = asyncio.create_task(coro)
     running_tasks.add(task)
+
     try:
         await task
     except asyncio.CancelledError:
@@ -66,6 +62,8 @@ async def track_task(coro):
 
 # Command dispatcher
 async def handle_command(command: str):
+
+
 
     command = command.strip()
 
@@ -79,7 +77,6 @@ async def handle_command(command: str):
             print_to_serial(str(e))
 
     elif command.upper().startswith("S"):
-
 
         try:
             asyncio.create_task(track_task(s.execute_command(command.upper())))
@@ -130,12 +127,12 @@ async def handle_command(command: str):
             task.cancel()
     elif command == "_reload":
 
-        #supervisor.runtime.autoreload = False
 
         print_to_serial("Reloading code.py")
-        #supervisor.set_next_code_file("code.py")
         print_to_serial("this might break any terminal connections")
         supervisor.reload()
+
+
     else:
         print_to_serial("Invalid command: " + command)
 
@@ -149,10 +146,13 @@ async def uart_listener():
         if uart.in_waiting > 0:
             c = uart.read(1).decode("utf-8")
             if c == "\n":
-                await handle_command(buffer)
+
+                asyncio.create_task(track_task(handle_command(buffer)))
+                #await handle_command(buffer)
                 buffer = ""
             else:
                 buffer += c
+
         await asyncio.sleep(0.01)
 
 # Main entry point
@@ -203,9 +203,8 @@ pca.frequency = PCA_FREQ
 pca.channels[0].duty_cycle = PCA_DUTY_CYCLE
 s = servoducky(pca=pca,uart=uart)
 
-
-
-
-
+if "init" in s.scripts:
+    print("Running init script")
+    s.run_script("init")
 
 asyncio.run(main())
