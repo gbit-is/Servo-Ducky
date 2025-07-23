@@ -260,9 +260,7 @@ class servoducky():
         script = self.read_script(script_contents)
 
         function_name = "main"
-        print("------- A")
         await self._execute_function(script,function_name,script_name)
-        print("-------- B")
 
         self.debug("Finished running script: " + script_name)
 
@@ -288,233 +286,259 @@ class servoducky():
         function = script[function_name]
         for line in function:
 
-
+            
             if "WAIT" not in line:
+  
 
                 line_id = max(self.actions[script_name]) + 1
                 self.actions[script_name].add(line_id)
+                print("LINE ID " + line + " " + str(line_id))
 
 
+            async_line = True
+            for action_type in ["DELAY","WAIT"]:
+                
+                if action_type in line.upper():
+                    
+                    async_line = False
 
-            if "DELAY" in line.upper():
-                print("DELAY")
-                await self.execute_command(line,script_name,script,params)
-            elif "WAIT" in line.upper():
-                print("WAIT")
-                print(self.actions[script_name])
-                await self.execute_command(line,script_name,script,params)
+                
+                    task = asyncio.create_task(self.execute_command(line,script_name=script_name,script=script,params=params,line_id=line_id))
 
-            else:
+                    if action_type == "DELAY":
+                        asyncio.create_task(self.task_watcher(task,script_name,line_id))
+                        
+
+                    while task.state:
+                        await asyncio.sleep(0.25)                
+
+            if async_line:
                 ### todo need to add logic here to gather tasks and discard ids based on execution finishing
-                asyncio.create_task(self.execute_command(line,script_name,script,params))
-
-            self.actions[script_name].discard(line_id)
-
-
+                task = asyncio.create_task(self.execute_command(line,script_name=script_name,script=script,params=params,line_id=line_id))
+                asyncio.create_task(self.task_watcher(task,script_name,line_id))
+        
 
 
 
-    async def execute_command(self,line,script_name="no_script",script="",params=[],line_id=""):
+    async def task_watcher(self,task,script_name,line_id):
+        while task.state:
+            await asyncio.sleep(0.1)
+            
+        self.actions[script_name].discard(line_id)
+        
+        
+        
 
 
-            self.debug("Executing command: " + str(line))
-            line_split = line.split()
-            orig_line = line
+    async def execute_command(self,line,**kwargs):
+        
+
+        if "script_name" in kwargs:
+            script_name = kwargs["script_name"]
+        if "line_id" in kwargs:
+            line_id = kwargs["line_id"]
 
 
-            if "_" in line:
-
-                line_parts = [ ]
-
-                for entry in line_split:
-                    if entry.startswith("_"):
-
-                        var_id = int(entry.replace("_",""))
-                        var_value = params[var_id]
-
-                        line_parts.append(var_value)
-
-                    else:
-                        line_parts.append(entry)
-
-                line = " ".join(line_parts)
+        self.debug("Executing command: " + str(line))
+        line_split = line.split()
+        orig_line = line
 
 
-            if line.startswith("S"):
+        if "_" in line:
 
+            line_parts = [ ]
 
-                servo_ids = None
+            for entry in line_split:
+                if entry.startswith("_"):
 
-                line = line[1:]
-                line_split = line.split()
+                    var_id = int(entry.replace("_",""))
+                    var_value = params[var_id]
 
-                if "[" in line:
-
-
-                    servo_raw = line_split[0].replace("[","").replace("]","")
-
-                    if "," in servo_raw:
-                        servo_ids = servo_raw.split(",")
-                    elif "..." in servo_raw:
-                        servo_range = servo_raw.strip().split("...")
-
-                        try:
-                            r0 = int(servo_range[0])
-                            r1 = int(servo_range[1])
-
-                            servo_ids = list(range(r0,r1 + 1 ))
-
-                        except Exception as e:
-                            self.debug("Unable to create a servo range with line " + orig_line)
-                            self.debug("Error is:\n" + str(e))
-
-
+                    line_parts.append(var_value)
 
                 else:
-                    servo_ids = [ line_split[0] ]
+                    line_parts.append(entry)
+
+            line = " ".join(line_parts)
 
 
-                if servo_ids is None:
-                    self.debug("No servo id found in line: " + orig_line)
-                    return
+        if line.startswith("S"):
 
-                for servo_id in servo_ids:
 
-                    servo_id = str(servo_id)
+            servo_ids = None
 
-                    if servo_id not in self.servos:
-                        self.debug("Invalid servo: " + servo_id)
-                        return
+            line = line[1:]
+            line_split = line.split()
 
+            if "[" in line:
+
+
+                servo_raw = line_split[0].replace("[","").replace("]","")
+
+                if "," in servo_raw:
+                    servo_ids = servo_raw.split(",")
+                elif "..." in servo_raw:
+                    servo_range = servo_raw.strip().split("...")
 
                     try:
-                        servo_angle = int(line_split[1])
-                    except:
-                        self.debug(line_split[1] + " is not an interger")
-                        return
+                        r0 = int(servo_range[0])
+                        r1 = int(servo_range[1])
+
+                        servo_ids = list(range(r0,r1 + 1 ))
+
+                    except Exception as e:
+                        self.debug("Unable to create a servo range with line " + orig_line)
+                        self.debug("Error is:\n" + str(e))
+
+
+
+            else:
+                servo_ids = [ line_split[0] ]
+
+
+            if servo_ids is None:
+                self.debug("No servo id found in line: " + orig_line)
+                return
+
+            for servo_id in servo_ids:
+
+                servo_id = str(servo_id)
+
+                if servo_id not in self.servos:
+                    self.debug("Invalid servo: " + servo_id)
+                    return
+
+
+                try:
+                    servo_angle = int(line_split[1])
+                except:
+                    self.debug(line_split[1] + " is not an interger")
+                    return
 
 
 
 
 
-                    actuation_range = self.servos[servo_id]["servo"].actuation_range
-                    if servo_angle > actuation_range:
-                        self.debug("WARNING: ")
-                        self.debug('LINE: "' + line + '" is invalid')
-                        self.debug("movement is defined at: " + str(servo_angle) + "° but the max range is: " + str(actuation_range) +"°")
-                        self.debug("reducing angle to: " + str(actuation_range))
-                        servo_angle = actuation_range
+                actuation_range = self.servos[servo_id]["servo"].actuation_range
+                if servo_angle > actuation_range:
+                    self.debug("WARNING: ")
+                    self.debug('LINE: "' + line + '" is invalid')
+                    self.debug("movement is defined at: " + str(servo_angle) + "° but the max range is: " + str(actuation_range) +"°")
+                    self.debug("reducing angle to: " + str(actuation_range))
+                    servo_angle = actuation_range
 
 
-                    if len(line_split) == 2:
-                        self.debug("setting servo: " + servo_id + " to angle " + str(servo_angle))
-                        self.servos[servo_id]["servo"].angle = servo_angle
-                    else:
-
-
-                        servo_time = int(line_split[2])
-
-                        if servo_time == 0:
-                            servo_time = 1
-
-
-                        step_sleep_time = 10
-
-
-
-                        current_pos = int(self.servos[servo_id]["servo"].angle)
-
-
-
-                        if current_pos > 400:
-                            current_pos = 1
-
-
-                        pos_diff = max(int(abs(current_pos - servo_angle)),1)
-                        pos_diff = servo_angle - current_pos
-                        direction = 1 if pos_diff >= 0 else -1
-                        abs_pos_diff = abs(pos_diff)
-
-
-                        steps_needed = max(1, int(servo_time // step_sleep_time))
-
-                        angle_per_step = (abs_pos_diff / steps_needed) * direction
-
-
-                        #print("steps needed,angle_per_step:", steps_needed, angle_per_step)
-
-                        for i in range(steps_needed):
-                            step_angle = current_pos + (i + 1) * angle_per_step
-                            #print(step_angle)
-                            self.servos[servo_id]["servo"].angle = step_angle
-                            #print(step_angle)
-                            await asyncio.sleep(step_sleep_time / 1000 )
-
-                        self.servos[servo_id]["servo"].angle = servo_angle
-
-                        await asyncio.sleep(0.01)
-
-                        return 0
-
-
-            elif line.upper().startswith("DELAY"):
-
-
-                if len(line_split) < 2:
-                    self.debug("No delay time specified in line: " + line)
-                    delay_time = 1000
+                if len(line_split) == 2:
+                    self.debug("setting servo: " + servo_id + " to angle " + str(servo_angle))
+                    self.servos[servo_id]["servo"].angle = servo_angle
                 else:
-                    delay_time = line_split[1]
-
-                delay_time = float(delay_time)
-
-                delay_time = delay_time / 1000
-
-                self.debug("sleeping for: " + str(delay_time))
 
 
-                await asyncio.sleep(delay_time)
+                    servo_time = int(line_split[2])
 
-            elif "WAIT" in line.upper():
-
-                do_wait = True
-                wait_counter = 0
-
-                while do_wait:
-                    print(".....")
-                    print(self.actions[script_name])
-                    print(len(self.actions[script_name]))
-                    if len(self.actions[script_name]) == 1:
-                        print("no need to wait anymore")
-                        do_wait = False
+                    if servo_time == 0:
+                        servo_time = 1
 
 
-                    print(wait_counter,self.class_args["MAX_WAIT"])
-
-                    wait_counter += 1
-                    if wait_counter > self.class_args["MAX_WAIT"]:
-                        do_wait = False
-
-                    if do_wait:
-                        await asyncio.sleep(0.25)
+                    step_sleep_time = 10
 
 
 
-            elif line.startswith("R"):
-                params = line.split()
-                params.pop(0)
-                routine = params[0]
-                params.pop(0)
+                    current_pos = int(self.servos[servo_id]["servo"].angle)
 
-                self.debug("executing function: " + routine + " with params: " + str(params))
-                await self._execute_function(script,routine,script_name,params)
 
-            elif line.startswith("G"):
 
-                params = line.split()
-                params.pop(0)
-                if params[0].startswith("S"):
-                    pass
+                    if current_pos > 400:
+                        current_pos = 1
+
+
+                    pos_diff = max(int(abs(current_pos - servo_angle)),1)
+                    pos_diff = servo_angle - current_pos
+                    direction = 1 if pos_diff >= 0 else -1
+                    abs_pos_diff = abs(pos_diff)
+
+
+                    steps_needed = max(1, int(servo_time // step_sleep_time))
+
+                    angle_per_step = (abs_pos_diff / steps_needed) * direction
+
+
+                    #print("steps needed,angle_per_step:", steps_needed, angle_per_step)
+
+                    for i in range(steps_needed):
+                        step_angle = current_pos + (i + 1) * angle_per_step
+                        #print(step_angle)
+                        self.servos[servo_id]["servo"].angle = step_angle
+                        #print(step_angle)
+                        await asyncio.sleep(step_sleep_time / 1000 )
+
+                    self.servos[servo_id]["servo"].angle = servo_angle
+
+                    await asyncio.sleep(0.01)
+
+                    return 0
+
+
+        elif line.upper().startswith("DELAY"):
+
+
+            if len(line_split) < 2:
+                self.debug("No delay time specified in line: " + line)
+                delay_time = 1000
+            else:
+                delay_time = line_split[1]
+
+            delay_time = float(delay_time)
+
+            delay_time = delay_time / 1000
+
+            self.debug("sleeping for: " + str(delay_time))
+
+
+            await asyncio.sleep(delay_time)
+
+        elif "WAIT" in line.upper():
+
+            do_wait = True
+            wait_counter = 0
+
+            while do_wait:
+                print("waiting: " + str(self.actions[script_name]))
+                if len(self.actions[script_name]) == 1:
+                    print("no need to wait anymore")
+                    do_wait = False
+
+
+                print(wait_counter,self.class_args["MAX_WAIT"])
+
+                wait_counter += 1
+                if wait_counter > self.class_args["MAX_WAIT"]:
+                    do_wait = False
+
+                if do_wait:
+                    await asyncio.sleep(0.25)
+
+
+
+        elif line.startswith("R"):
+            params = line.split()
+            params.pop(0)
+            routine = params[0]
+            params.pop(0)
+
+            self.debug("executing function: " + routine + " with params: " + str(params))
+            await self._execute_function(script,routine,script_name,params)
+
+        elif line.startswith("G"):
+
+            params = line.split()
+            params.pop(0)
+            if params[0].startswith("S"):
+                pass
+            
+        #if "line_id" in kwargs:
+            #print("removing action from stack: " + str(line_id) )
+            #self.actions[script_name].discard(kwargs["line_id"])
 
 
 
