@@ -272,7 +272,7 @@ class servoducky():
 
             self.debug("Executing command: " + str(line))
             line_split = line.split()
-
+            orig_line = line
 
 
             if "_" in line:
@@ -296,27 +296,45 @@ class servoducky():
 
             if line.startswith("S"):
 
+
+                servo_ids = None
+
                 line = line[1:]
                 line_split = line.split()
 
                 if "[" in line:
 
 
-
                     servo_raw = line_split[0].replace("[","").replace("]","")
 
                     if "," in servo_raw:
                         servo_ids = servo_raw.split(",")
+                    elif "..." in servo_raw:
+                        servo_range = servo_raw.strip().split("...")
+
+                        try:
+                            r0 = int(servo_range[0])
+                            r1 = int(servo_range[1])
+
+                            servo_ids = list(range(r0,r1))
+
+                        except Exception as e:
+                            self.debug("Unable to create a servo range with line " + orig_line)
+                            self.debug("Error is:\n" + str(e))
+
 
 
                 else:
-
-
-
                     servo_ids = [ line_split[0] ]
 
 
+                if servo_ids is None:
+                    self.debug("No servo id found in line: " + orig_line)
+                    return
+
                 for servo_id in servo_ids:
+
+                    servo_id = str(servo_id)
 
                     if servo_id not in self.servos:
                         self.debug("Invalid servo: " + servo_id)
@@ -482,8 +500,8 @@ if __name__ == "__main__":
 
 
         s.class_args["debug_console"] = True
-        #await s.execute_command("S[0,2] 0")
-        await s.execute_command("S0 0")
+        await s.execute_command("S[0...5] 0")
+        #await s.execute_command("S0 0")
 
 
         await asyncio.sleep(0.5)
