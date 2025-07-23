@@ -4,6 +4,8 @@ import asyncio
 import board
 import supervisor
 import time
+import circuitpython_base64 as base64
+
 
 from adafruit_pca9685 import PCA9685
 from adafruit_motor import servo
@@ -102,6 +104,11 @@ class servoducky():
                     print("Unable to print to UART. Error is:\n" + str(e))
         if self.class_args["debug_console"]:
             print(message)
+
+    def write_to_uart(self,message):
+        self.class_args["uart"].write(str(message) + "\n")
+        print(message)
+
 
 
     def set_status_led(self,color):
@@ -261,7 +268,12 @@ class servoducky():
 
         function = script[function_name]
         for line in function:
-            await self.execute_command(line,script,params)
+            self.write_to_uart("....." + line)
+
+            if "DELAY" in line.upper():
+                await self.execute_command(line,script,params)
+            else:
+                asyncio.create_task(self.execute_command(line,script,params))
 
 
 
@@ -291,11 +303,12 @@ class servoducky():
                         line_parts.append(entry)
 
                 line = " ".join(line_parts)
-                #line = line.replace(var_string,var_value)
 
 
             if line.startswith("S"):
 
+
+                self.write_to_uart(line)
 
                 servo_ids = None
 
@@ -406,7 +419,7 @@ class servoducky():
 
                         self.servos[servo_id]["servo"].angle = servo_angle
 
-                        #await asyncio.sleep(0.01)
+                        await asyncio.sleep(0.01)
 
                         return 0
 
@@ -445,69 +458,6 @@ class servoducky():
                 if params[0].startswith("S"):
                     pass
 
-
-
-
-
-
-
-
-if __name__ == "__main__":
-
-    import busio
-    import digitalio
-    SCL_PIN = board.GP27
-    SDA_PIN = board.GP26
-    OE_PIN = board.GP28
-
-    POWER_PINS = { }
-
-    POWER_PINS["GND"] = { }
-    POWER_PINS["GND"]["BOARD"] = board.GP29
-    POWER_PINS["GND"]["ENABLED"] = True
-    POWER_PINS["GND"]["VALUE"] = False
-
-    POWER_PINS["VCC"] = { }
-    POWER_PINS["VCC"]["BOARD"] = board.GP15
-    POWER_PINS["VCC"]["ENABLED"] = True
-    POWER_PINS["VCC"]["VALUE"] = True
-
-    for POWER_PIN in POWER_PINS:
-        if POWER_PINS[POWER_PIN]["ENABLED"]:
-            POWER_PINS[POWER_PIN]["DIO"] = digitalio.DigitalInOut(POWER_PINS[POWER_PIN]["BOARD"])
-            POWER_PINS[POWER_PIN]["DIO"].direction = digitalio.Direction.OUTPUT
-            POWER_PINS[POWER_PIN]["DIO"].value = POWER_PINS[POWER_PIN]["VALUE"]
-
-
-
-    PCA_FREQ = 60
-    PCA_DUTY_CYCLE = 0x7FFF
-    NUMBER_OF_SERVOS = 4
-
-    # Create the I2C bus interface.
-    i2c = busio.I2C(SCL_PIN,SDA_PIN)    # Pi Pico RP2040
-    pca = PCA9685(i2c)
-    pca.frequency = PCA_FREQ
-    pca.channels[0].duty_cycle = PCA_DUTY_CYCLE
-
-    s = servoducky(pca=pca)
-
-
-
-
-
-    async def main():
-
-
-        s.class_args["debug_console"] = True
-        await s.execute_command("S[0...5] 0")
-        #await s.execute_command("S0 0")
-
-
-        await asyncio.sleep(0.5)
-
-
-    asyncio.run(main())
 
 
 
