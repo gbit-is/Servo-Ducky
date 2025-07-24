@@ -48,22 +48,29 @@ pca.channels[0].duty_cycle = PCA_DUTY_CYCLE
 s = servoducky(pca=pca)
 
 
-s.class_args["debug_uart"] = True
-s.class_args["debug_console"] = True
+#s.class_args["debug_uart"] = True
+#s.class_args["debug_console"] = True
 
 
 
 
 # go to initial position
-s.execute_command("S[0...15] 0")
-time.sleep(1)
+#s.execute_command("S0 180")
+#time.sleep(1)
 
 # for each defined time to measure
 async def run_thing():
 
-    comm = "f_db_2"
-    await s.run_script(comm)
-    await asyncio.sleep(0.5)
+    comm = "es2"
+
+    running_tasks = set()
+
+    task = asyncio.create_task(s.run_script(comm))
+    running_tasks.add(task)
+    await task
+
+    #await s.run_script(comm)
+    #await asyncio.sleep(0.5)
 
 def main():
 

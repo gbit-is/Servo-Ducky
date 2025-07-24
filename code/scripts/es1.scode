@@ -1,6 +1,7 @@
 [main]
-S0 0
-DELAY 150 # hello there
+S0 0 2500
+WAIT
+DELAY 1000
 S0 180  300
 R routine_1 S0 S1
 delay 700
