@@ -14,8 +14,12 @@
 |  ** 5V ** | ** V+  **    | Powers the Servo's from the Pi, should not be used except for debugging |
 
 # Option 2 
+### Pin V+ on the PCA9685 should !!NOT!! have a header and should !!NOT!! be connected to GP14 
+Electrical connections:  
+<img src="https://raw.githubusercontent.com/gbit-is/Servo-Ducky/refs/heads/main/images/connection_diagram_alt_framed.svg" alt="diagram" width="90%"/>  
 
-<img src="https://raw.githubusercontent.com/gbit-is/Servo-Ducky/refs/heads/main/images/connection_diagram_alt_framed.svg" alt="diagram" width="90%"/>
+Layout:  
+<img src="https://raw.githubusercontent.com/gbit-is/Servo-ducky/refs/heads/main/images/connection_option_2_3d.png" alt="conection_2" width="90%"/>  
 
 | RP2040 | PCA9685 | Notes |
 | ------ | ------- | ----- |
@@ -25,6 +29,8 @@
 | GP26   | SDA     | I2C Data |
 | GP15   | VCC     | PCA9685 Power |
 |  ** 5V ** | ** V+  **    | Powers the Servo's from the Pi, should not be used except for debugging |
+
+
 
 
 # Assemble the frame For Connection Option 1
