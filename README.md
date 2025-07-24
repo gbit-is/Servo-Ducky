@@ -28,8 +28,9 @@ Legend:
     [can be specified]
 
 #### Basic commands
-S\<Servo Number\> \<Degree to move to\> [Time to move there]  # Expanded on in 
-DELAY \<time\>  
+S\<Servo Number\> \<Degree to move to\> [Time to move there]  \# Expanded on in "Advanced commands"
+DELAY \<time\>  \# Wait for \<time\>ms 
+WAIT \# Wait until all running actions have finished
 R \<routine to execute\>  \[Variables to pass to a routine \]  
 
 #### Advanced commands
@@ -78,7 +79,8 @@ S1 0          # Servo 1, go to position 0°
 S2 90         # Servo 2, go to position 90°
 DELAY 500     # Wait for half a second
 S0 90 2500    # Servo 0, go to position 90° in linear steps, over a period of 2,5 seconds
-DELAY 2500    # wait for Servo 0 to go to position 90°
+S3 90 3500    # Servo 3, go to position 90° in linear steps, over a period of 3,5 seconds
+WAIT          # wait for Servo 0 and 3 to finish their movements
 S1 180        # Servo 1, go to position 180°
 R some_routine S4 S5 0   # Execute routine "some_routine" with variables 0 and 1 as S4 and S5, and variable 2 as 0
 delay 500    # wait for half a second
