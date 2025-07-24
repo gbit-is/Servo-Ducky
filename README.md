@@ -28,11 +28,12 @@ Legend:
     [can be specified]
 
 #### Basic commands
-S\<Servo Number\> \<Degree to move to\> [Time to move there]  \# Expanded on in "Advanced commands"
-DELAY \<time\>  \# Wait for \<time\>ms 
-WAIT \# Wait until all running actions have finished
-R \<routine to execute\>  \[Variables to pass to a routine \]  
-
+```
+S<Servo Number> <Degree to move to> [Time to move there]      # Expanded on in "Advanced commands"  
+DELAY <time>                                                  # Wait for <time> ms     
+WAIT                                                          # Wait until all running actions have finished   
+R <routine to execute>  [Variables to pass to a routine ]     # run routines, expanded on in "Routines"   
+```
 #### Advanced commands
 
 Lists:
