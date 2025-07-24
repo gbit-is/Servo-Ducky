@@ -49,7 +49,7 @@ s = servoducky(pca=pca)
 
 
 #s.class_args["debug_uart"] = True
-#s.class_args["debug_console"] = True
+s.class_args["debug_console"] = True
 
 
 
@@ -65,7 +65,8 @@ async def run_thing():
 
     running_tasks = set()
 
-    task = asyncio.create_task(s.run_script(comm))
+    #task = asyncio.create_task(s.run_script(comm))
+    task = asyncio.create_task(s.execute_command("S[0,2] 90"))
     running_tasks.add(task)
     await task
 
