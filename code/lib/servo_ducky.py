@@ -39,9 +39,10 @@ class servoducky():
     CLASS_DEFAULTS["servo_configs"] = { }
     CLASS_DEFAULTS["number_of_servos"] = 16
     CLASS_DEFAULTS["neopixel_pin"] = board.GP16
-    CLASS_DEFAULTS["debug_uart"] = False
-    CLASS_DEFAULTS["debug_console"] = False
+    CLASS_DEFAULTS["debug_uart"] = True
+    CLASS_DEFAULTS["debug_console"] = True
     CLASS_DEFAULTS["MAX_WAIT"] = 50
+    CLASS_DEFAULTS["SERVO_MOVE_SLEEP_TIME"] = 10
 
 
     actions = { }
@@ -269,7 +270,7 @@ class servoducky():
         script_name = tmp_script
         function_name = "main"
 
-        self.debug("Running script: " + script_name)
+        self.debug("Running script from IDE")
 
         script = self.read_script(script_name)
 
@@ -279,7 +280,7 @@ class servoducky():
 
         await self._execute_function(script,function_name,script_name)
 
-        self.debug("Finished running script: " + script_name)
+        self.debug("Finished running script from IDE")
 
 
     async def _execute_function(self,script,function_name,script_name,params=[]):
@@ -295,7 +296,6 @@ class servoducky():
 
                 line_id = max(self.actions[script_name]) + 1
                 self.actions[script_name].add(line_id)
-                print("LINE ID " + line + " " + str(line_id))
 
 
             async_line = True
@@ -331,21 +331,40 @@ class servoducky():
 
 
 
+    async def servo_slow_move(self,servo_id,servo_angle,servo_time):
+
+        step_sleep_time = self.class_args["SERVO_MOVE_SLEEP_TIME"]
+
+        current_pos = int(self.servos[servo_id]["servo"].angle)
 
 
-    async def execute_command(self,line,**kwargs):
+        if current_pos > 400:
+            current_pos = 1
 
 
-        if "script_name" in kwargs:
-            script_name = kwargs["script_name"]
-        if "line_id" in kwargs:
-            line_id = kwargs["line_id"]
+        pos_diff = max(int(abs(current_pos - servo_angle)),1)
+        pos_diff = servo_angle - current_pos
+        direction = 1 if pos_diff >= 0 else -1
+        abs_pos_diff = abs(pos_diff)
 
 
-        self.debug("Executing command: " + str(line))
-        line_split = line.split()
-        orig_line = line
+        steps_needed = max(1, int(servo_time // step_sleep_time))
 
+        angle_per_step = (abs_pos_diff / steps_needed) * direction
+
+
+
+        for i in range(steps_needed):
+            step_angle = current_pos + (i + 1) * angle_per_step
+            self.servos[servo_id]["servo"].angle = step_angle
+            await asyncio.sleep(step_sleep_time / 1000 )
+            #self.debug("stepping servo: " + servo_id + " to: " + str(step_angle))
+
+        self.servos[servo_id]["servo"].angle = servo_angle
+
+        await asyncio.sleep(0.01)
+
+    def parse_args(self,line):
 
         if "_" in line:
 
@@ -364,46 +383,69 @@ class servoducky():
 
             line = " ".join(line_parts)
 
+        return line
+
+    def parse_servo_ids(self,line):
+        servo_ids = None
+
+        line = line[1:]
+        line_split = line.split()
+
+        if "[" in line:
+
+
+            servo_raw = line_split[0].replace("[","").replace("]","")
+            if "," in servo_raw:
+                servo_ids = servo_raw.split(",")
+            elif "..." in servo_raw:
+                servo_range = servo_raw.strip().split("...")
+
+                try:
+                    r0 = int(servo_range[0])
+                    r1 = int(servo_range[1])
+
+                    servo_ids = list(range(r0,r1 + 1 ))
+
+                except Exception as e:
+                    self.debug("Unable to create a servo range with line " + orig_line)
+                    self.debug("Error is:\n" + str(e))
+
+
+        else:
+            servo_ids = [ line_split[0] ]
+
+
+        return servo_ids
+
+
+
+    async def execute_command(self,line,**kwargs):
+
+
+        if "script_name" in kwargs:
+            script_name = kwargs["script_name"]
+        if "line_id" in kwargs:
+            line_id = kwargs["line_id"]
+
+
+        self.debug("Executing command: " + str(line))
+        line_split = line.split()
+        orig_line = line
+
+
+        line = self.parse_args(line)
 
         if line.startswith("S"):
 
 
-            servo_ids = None
-
-            line = line[1:]
-            line_split = line.split()
-
-            if "[" in line:
-
-
-                servo_raw = line_split[0].replace("[","").replace("]","")
-
-                if "," in servo_raw:
-                    servo_ids = servo_raw.split(",")
-                elif "..." in servo_raw:
-                    servo_range = servo_raw.strip().split("...")
-
-                    try:
-                        r0 = int(servo_range[0])
-                        r1 = int(servo_range[1])
-
-                        servo_ids = list(range(r0,r1 + 1 ))
-
-                    except Exception as e:
-                        self.debug("Unable to create a servo range with line " + orig_line)
-                        self.debug("Error is:\n" + str(e))
-
-
-
-            else:
-                servo_ids = [ line_split[0] ]
-
+            servo_ids = self.parse_servo_ids(line)
 
             if servo_ids is None:
                 self.debug("No servo id found in line: " + orig_line)
                 return
 
             for servo_id in servo_ids:
+
 
                 servo_id = str(servo_id)
 
@@ -417,10 +459,6 @@ class servoducky():
                 except:
                     self.debug(line_split[1] + " is not an interger")
                     return
-
-
-
-
 
                 actuation_range = self.servos[servo_id]["servo"].actuation_range
                 if servo_angle > actuation_range:
@@ -436,50 +474,20 @@ class servoducky():
                     self.servos[servo_id]["servo"].angle = servo_angle
                 else:
 
-
                     servo_time = int(line_split[2])
 
                     if servo_time == 0:
                         servo_time = 1
 
-
-                    step_sleep_time = 10
-
-
-
-                    current_pos = int(self.servos[servo_id]["servo"].angle)
+                    servo_slow_line_id = max(self.actions[script_name]) + 1
+                    task = asyncio.create_task(self.servo_slow_move(servo_id,servo_angle,servo_time))
+                    asyncio.create_task(self.task_watcher(task,script_name,servo_slow_line_id))
 
 
-
-                    if current_pos > 400:
-                        current_pos = 1
-
-
-                    pos_diff = max(int(abs(current_pos - servo_angle)),1)
-                    pos_diff = servo_angle - current_pos
-                    direction = 1 if pos_diff >= 0 else -1
-                    abs_pos_diff = abs(pos_diff)
+                    #await self.servo_slow_move(servo_id,servo_angle,servo_time)
+                    #servo_slow_move(self,servo_id,time_to_take
 
 
-                    steps_needed = max(1, int(servo_time // step_sleep_time))
-
-                    angle_per_step = (abs_pos_diff / steps_needed) * direction
-
-
-                    #print("steps needed,angle_per_step:", steps_needed, angle_per_step)
-
-                    for i in range(steps_needed):
-                        step_angle = current_pos + (i + 1) * angle_per_step
-                        #print(step_angle)
-                        self.servos[servo_id]["servo"].angle = step_angle
-                        #print(step_angle)
-                        await asyncio.sleep(step_sleep_time / 1000 )
-
-                    self.servos[servo_id]["servo"].angle = servo_angle
-
-                    await asyncio.sleep(0.01)
-
-                    return 0
 
 
         elif line.upper().startswith("DELAY"):
