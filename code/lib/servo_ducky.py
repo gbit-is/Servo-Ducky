@@ -273,6 +273,9 @@ class servoducky():
 
         script = self.read_script(script_name)
 
+        self.actions[script_name] = set()
+        self.actions[script_name].add(0)
+
 
         await self._execute_function(script,function_name,script_name)
 
@@ -286,9 +289,9 @@ class servoducky():
         function = script[function_name]
         for line in function:
 
-            
+
             if "WAIT" not in line:
-  
+
 
                 line_id = max(self.actions[script_name]) + 1
                 self.actions[script_name].add(line_id)
@@ -297,41 +300,41 @@ class servoducky():
 
             async_line = True
             for action_type in ["DELAY","WAIT"]:
-                
+
                 if action_type in line.upper():
-                    
+
                     async_line = False
 
-                
+
                     task = asyncio.create_task(self.execute_command(line,script_name=script_name,script=script,params=params,line_id=line_id))
 
                     if action_type == "DELAY":
                         asyncio.create_task(self.task_watcher(task,script_name,line_id))
-                        
+
 
                     while task.state:
-                        await asyncio.sleep(0.25)                
+                        await asyncio.sleep(0.25)
 
             if async_line:
                 ### todo need to add logic here to gather tasks and discard ids based on execution finishing
                 task = asyncio.create_task(self.execute_command(line,script_name=script_name,script=script,params=params,line_id=line_id))
                 asyncio.create_task(self.task_watcher(task,script_name,line_id))
-        
+
 
 
 
     async def task_watcher(self,task,script_name,line_id):
         while task.state:
             await asyncio.sleep(0.1)
-            
+
         self.actions[script_name].discard(line_id)
-        
-        
-        
+
+
+
 
 
     async def execute_command(self,line,**kwargs):
-        
+
 
         if "script_name" in kwargs:
             script_name = kwargs["script_name"]
@@ -535,7 +538,7 @@ class servoducky():
             params.pop(0)
             if params[0].startswith("S"):
                 pass
-            
+
         #if "line_id" in kwargs:
             #print("removing action from stack: " + str(line_id) )
             #self.actions[script_name].discard(kwargs["line_id"])
