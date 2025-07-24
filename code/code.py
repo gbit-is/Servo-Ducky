@@ -37,9 +37,12 @@ for PCA_PIN in PCA_PINS:
 # Store all running tasks
 running_tasks = set()
 
-def print_to_serial(msg):
+def print_to_serial(msg,header=True):
 
-    uart.write(str(msg) + "\n")
+    if header:
+        uart.write("FP: " + str(msg) + "\n")
+    else:
+        uart.write(str(msg) + "\n")
     print(str(msg))
 
 # Example action function
@@ -96,7 +99,7 @@ async def handle_command(command: str):
             {"debug": s.class_args["debug_uart"]},
             "DONE"
         ]
-        print_to_serial(json.dumps(ducky_info))
+        print_to_serial(json.dumps(ducky_info),False)
 
     elif command.upper().startswith("LOAD"):
 
