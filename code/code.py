@@ -14,7 +14,11 @@ import circuitpython_base64 as base64
 uart = usb_cdc.data
 
 WHOIS_ID = "servo_ducky_v0"
+DO_AUTO_RELOAD = False
 
+
+
+supervisor.runtime.autoreload = DO_AUTO_RELOAD
 
 PCA_PINS = { }
 PCA_PINS["SCL_PIN"] = { "default" : 27 }
@@ -102,7 +106,6 @@ async def handle_command(command: str):
         try:
             script_base64 = command.split("|")[1]
             script_decoded = base64.decodebytes(script_base64.encode()).decode()
-
             asyncio.create_task(track_task(s.run_tmp_script(script_decoded)))
             s.debug("C: Done running loaded script\n")
         except Exception as e:
